@@ -70,12 +70,15 @@ _AGENCY_RE = re.compile(
     r"predimed|\bzome\b|engel\s*&|v[öo]lkers|vanguard\s+properties|"
     r"\biad\s+(portugal|imob)|\bera\s+(imobili|madeira|funchal|calheta|portugal)|grupo\s+era|\bera\.pt|"
     r"sotheby|fine\s*&\s*country|\bjll\b|remax|sonasa|casaiberia|poliana|novaco|"
-    r"grupo\s+imobili|real\s+estate\s+(agenc|group)|"
-    # pegadas típicas de anúncio profissional
+    r"grupo\s+imobili|real\s*estate|luxury\s+real|properties\b|"
+    # pegadas típicas de anúncio profissional (baixo falso-positivo em pt-PT)
     r"www\.[a-z0-9-]+\.(pt|com)|https?://|"
     r"refer[êe]ncia\s*[:#]|\bref[\.:ºª]\s*\w*\d|"
     r"certificad[oa]\s+energ[ée]tic|classe\s+energ[ée]tic|"
-    r"(marque|agende|marcar|agendar)\s+(j[áa]\s+)?(a\s+sua\s+)?visita)",
+    r"master\s*suite|portf[oó]lio|home\s*staging|"
+    r"oportunidade\s+de\s+investimento|rentabilidade|"
+    r"financiamento\s+(aprovado|a\s*100|100%)|"
+    r"(marque|agende|marcar|agendar)\s+(j[áa]\s+)?(a\s+sua\s+)?(visita|marca[çc][ãa]o))",
     re.IGNORECASE,
 )
 

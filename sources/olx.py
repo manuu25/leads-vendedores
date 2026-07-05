@@ -104,12 +104,20 @@ def parse_listing(html):
         if loc_el:
             localidade = re.split(r"\s+-\s+", loc_el.get_text(" ", strip=True))[0].strip()
 
+        # miniatura do próprio cartão (evita visitar o anúncio só p/ ter 1 foto)
+        foto = ""
+        if img:
+            foto = img.get("src") or img.get("data-src") or ""
+            if foto.startswith("data:") or not foto.startswith("http"):
+                foto = ""
+
         seen[ad_id] = {
             "id": ad_id,
             "url": urljoin(BASE, a["href"].split("?")[0]),
             "titulo": (img.get("alt") if img else "") or "",
             "preco": preco,
             "localidade": localidade or None,
+            "fotos": [foto] if foto else [],
         }
 
     # Fallback: se o layout mudar e não houver cartões, tenta pelos links.
@@ -133,6 +141,8 @@ SOURCE = Source(
     parse_listing=parse_listing,
     parse_detail=generic_parse_detail,
     engine_hint="playwright",
+    needs_detail=False,   # o cartão já traz título/preço/localidade/miniatura; o
+                          # telefone está sempre atrás de login → visitar não compensa
     verified=True,
-    notes="Cartões: título/preço/localidade OK; arrendamentos filtrados. Telefone atrás de login/clique.",
+    notes="Cartões: título/preço/localidade/miniatura OK; sem visitar (telefone só após login).",
 )

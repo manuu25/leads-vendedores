@@ -103,15 +103,20 @@ _LAST = {"rows": [], "lock": threading.Lock()}
 _AUTO = {
     "running": False, "thread": None, "leads": {}, "log": [],
     "cycles": 0, "started": None, "lock": threading.Lock(),
+    "blocked": set(),   # chaves descartadas manualmente (não voltam nos ciclos)
 }
 
 
 def _merge_leads(rows):
-    """Junta os leads de um ciclo ao acumulador; devolve quantos são novos."""
+    """Junta os leads de um ciclo ao acumulador; devolve quantos são novos.
+    Ignora chaves na blocklist (leads descartados à mão, ex.: agências que
+    passaram o filtro por só terem a marca na foto)."""
     novos = 0
     with _AUTO["lock"]:
         for r in rows:
             key = f"{r.get('fonte')}|{r.get('id')}"
+            if key in _AUTO["blocked"]:
+                continue
             if key not in _AUTO["leads"]:
                 novos += 1
             _AUTO["leads"][key] = r
@@ -309,6 +314,20 @@ async def auto_leads():
     with _LAST["lock"]:  # espelha para a exportação funcionar
         _LAST["rows"] = rows
     return {"rows": rows, "status": status, "log": log}
+
+
+@app.post("/api/auto/remove")
+async def auto_remove(request: Request):
+    """Descarta leads escolhidos (ex.: agências que passaram o filtro por só
+    terem a marca na foto) e impede que voltem nos próximos ciclos."""
+    data = await request.json()
+    keys = data.get("keys") or []
+    with _AUTO["lock"]:
+        for k in keys:
+            _AUTO["blocked"].add(k)
+            _AUTO["leads"].pop(k, None)
+        total = len(_AUTO["leads"])
+    return {"removed": len(keys), "total": total}
 
 
 @app.get("/api/export")

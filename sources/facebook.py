@@ -59,12 +59,23 @@ _FSBO_RE = re.compile(
 )
 
 # Sinais fortes de agência / consultor imobiliário (baixo falso-positivo).
+# NOTA: quando a marca da agência só existe na marca-de-água da FOTO (ex.: um
+# anúncio da ERA cujo texto nada diz), isto NÃO a apanha — não há OCR nem campo
+# de vendedor no dataset do Apify. Para esses, o utilizador usa "Descartar".
 _AGENCY_RE = re.compile(
     r"(imobili[aá]ri[ao]|media[çc][aã]o\s+imobili|consultor[ae]?\s+imobili|"
-    r"licen[çc]a\s*ami|\bami[\s:.#-]*\d{3,}|"
-    r"re/?max|century\s*21|century21|keller\s*williams|predimed|zome|"
-    r"engel\s*&|v[öo]lkers|vanguard\s+properties|\biad\s+(portugal|imob)|"
-    r"grupo\s+imobili|real\s+estate\s+(agenc|group))",
+    r"licen[çc]a\s*ami|\bami[\s:.#ºª-]*\d{3,}|"
+    # marcas / redes
+    r"re\s*/?\s*max|century\s*21|\bc21\b|keller\s*williams|\bkw\b\s*(portugal|imob|madeira)|"
+    r"predimed|\bzome\b|engel\s*&|v[öo]lkers|vanguard\s+properties|"
+    r"\biad\s+(portugal|imob)|\bera\s+(imobili|madeira|funchal|calheta|portugal)|grupo\s+era|\bera\.pt|"
+    r"sotheby|fine\s*&\s*country|\bjll\b|remax|sonasa|casaiberia|poliana|novaco|"
+    r"grupo\s+imobili|real\s+estate\s+(agenc|group)|"
+    # pegadas típicas de anúncio profissional
+    r"www\.[a-z0-9-]+\.(pt|com)|https?://|"
+    r"refer[êe]ncia\s*[:#]|\bref[\.:ºª]\s*\w*\d|"
+    r"certificad[oa]\s+energ[ée]tic|classe\s+energ[ée]tic|"
+    r"(marque|agende|marcar|agendar)\s+(j[áa]\s+)?(a\s+sua\s+)?visita)",
     re.IGNORECASE,
 )
 

@@ -113,6 +113,8 @@
     .selbar button{ height:34px; padding:0 13px; border-radius:9px; border:1px solid rgba(255,255,255,.28); background:rgba(255,255,255,.12); color:#fff; font-weight:600; font-size:12.5px; display:inline-flex; align-items:center; gap:7px; }
     .selbar button:hover{ background:rgba(255,255,255,.22); }
     .selbar button.solid{ background:#fff; color:var(--accent); border-color:#fff; }
+    .selbar button.danger{ background:rgba(255,90,90,.16); border-color:rgba(255,120,120,.45); color:#ffd9d9; }
+    .selbar button.danger:hover{ background:rgba(255,90,90,.3); color:#fff; }
     .selbar button svg{ width:15px; height:15px; }
 
     .imovel{ display:flex; align-items:center; gap:11px; min-width:230px; }
@@ -325,9 +327,13 @@
 
       <div class="selbar" id="selbar">
         <b id="sel-count">0 selecionados</b>
-        <span style="opacity:.75; font-size:12.5px">— exporta só os que escolheste</span>
+        <span style="opacity:.75; font-size:12.5px">— exporta ou descarta os que escolheste</span>
         <div class="sb-sp">
           <button id="sel-clear">Limpar</button>
+          <button class="danger" id="sel-discard" title="Remover (ex.: agências que passaram o filtro) — não voltam">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            Descartar (não é particular)
+          </button>
           <button class="solid" id="sel-export">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
             Exportar selecionados (CSV)
@@ -614,6 +620,18 @@ $('#sel-clear').addEventListener('click', ()=>{ selected.clear(); render(); });
 $('#sel-export').addEventListener('click', ()=>{
   const rows=allRows.filter(r=> selected.has(String(r.fonte)+'|'+String(r.id)) );
   if(rows.length) downloadCSV(rows);
+});
+$('#sel-discard').addEventListener('click', async ()=>{
+  const keys=[...selected];
+  if(!keys.length) return;
+  if(!confirm(`Descartar ${keys.length} lead(s)? Não voltam a aparecer (ex.: agências).`)) return;
+  try{
+    await fetch('/api/auto/remove', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({keys})});
+  }catch(e){}
+  const rm=new Set(keys);
+  allRows = allRows.filter(r=> !rm.has(String(r.fonte)+'|'+String(r.id)) );
+  selected.clear();
+  render();
 });
 function downloadCSV(rows){
   const cols=['fonte','titulo','tipologia','area_m2','preco','localidade','anunciante','telefone','tipo_anunciante','url','fotos'];

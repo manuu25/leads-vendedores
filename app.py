@@ -25,6 +25,7 @@ import asyncio
 import io
 import json
 import os
+import re
 import threading
 import time
 from datetime import datetime
@@ -105,6 +106,24 @@ _AUTO = {
     "cycles": 0, "started": None, "lock": threading.Lock(),
     "blocked": set(),   # chaves descartadas manualmente (não voltam nos ciclos)
 }
+
+
+def _is_madeira_regiao(regiao):
+    r = (regiao or "").strip().lower()
+    return "madeira" in r or "funchal" in r
+
+
+def _mainland_landline(tel):
+    """True se o telefone é um fixo GEOGRÁFICO do continente (indicativo 2xx que
+    não 291). Fixos da Madeira/Porto Santo = 291. Móveis (9x) → False (não dá
+    para saber a região). Serve para tirar cross-posts do continente mal-postos
+    sob a Madeira no CustoJusto."""
+    if not tel:
+        return False
+    d = re.sub(r"\D", "", str(tel))
+    if d.startswith("351"):
+        d = d[3:]
+    return bool(re.match(r"^2(?!91)\d{7,8}$", d))
 
 
 def _merge_leads(rows):
@@ -218,6 +237,16 @@ def run_scrape(params):
                     rec["data_recolha"] = captura
 
             registos.extend(base)
+
+    # Correspondência à Madeira: tira cross-posts do continente que aparecem
+    # mal-postos sob a região Madeira (delatados pelo fixo geográfico 2xx≠291).
+    if _is_madeira_regiao(p["regiao"]):
+        antes = len(registos)
+        registos = [r for r in registos if not _mainland_landline(r.get("telefone"))]
+        removidos = antes - len(registos)
+        if removidos:
+            log.append(f"Filtro Madeira: {removidos} anúncio(s) do continente "
+                       f"removidos (fixo 2xx≠291).")
 
     # fotos: lista -> string separada por " | " (para tabela/CSV)
     for rec in registos:

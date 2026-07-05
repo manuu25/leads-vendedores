@@ -23,6 +23,7 @@ Arrancar:
 
 import asyncio
 import io
+import json
 import os
 import threading
 import time
@@ -228,7 +229,9 @@ def run_scrape(params):
     tem_tel = df["telefone"].notna() & (df["telefone"].astype(str).str.len() > 3)
     df = df[~(tem_tel & df.duplicated(subset="telefone", keep="first"))]
 
-    rows = df.where(pd.notnull(df), None).to_dict(orient="records")
+    # to_json converte NaN->null e tipos numpy->nativos (o to_dict deixava NaN,
+    # que rebenta a serialização JSON do FastAPI). json.loads devolve dicts limpos.
+    rows = json.loads(df.to_json(orient="records"))
 
     with _LAST["lock"]:
         _LAST["rows"] = rows

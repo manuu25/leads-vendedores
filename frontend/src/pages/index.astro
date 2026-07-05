@@ -1,0 +1,47 @@
+---
+// O painel completo (multicanal, fotos, scraping contínuo) é servido pelo
+// backend FastAPI em http://localhost:8000. Esta página do Astro deixou de ter
+// UI própria — apenas encaminha para lá (ou explica como arrancar o backend).
+const API = import.meta.env.PUBLIC_API_BASE || "http://localhost:8000";
+---
+
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Leads FSBO Madeira · painel</title>
+    <style>
+      body { font-family: Inter, system-ui, sans-serif; background: #f6f8fb; color: #0f172a;
+             display: grid; place-items: center; min-height: 100vh; margin: 0; }
+      .card { background: #fff; border: 1px solid #e5e9f0; border-radius: 16px;
+              padding: 2rem 2.2rem; max-width: 560px; box-shadow: 0 10px 30px rgba(2,6,23,.06); }
+      h1 { margin: 0 0 .4rem; font-size: 1.4rem; }
+      a { color: #2563eb; font-weight: 600; }
+      pre { background: #0f172a; color: #cbd5e1; padding: .7rem 1rem; border-radius: 10px;
+            overflow-x: auto; font-size: .85rem; }
+      .hint { color: #64748b; }
+      .warn { color: #991b1b; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>🏡 O painel mudou-se</h1>
+      <p>Usa agora o painel completo — multicanal (CustoJusto · OLX · Facebook Marketplace),
+         com fotos, link, e <strong>scraping contínuo</strong> — em:</p>
+      <p><a id="link" href={API}>{API}</a></p>
+      <p id="hint" class="hint">A verificar o backend…</p>
+      <p class="hint">Se estiver offline, arranca-o na pasta do projeto:</p>
+      <pre>uvicorn app:app --reload --port 8000</pre>
+    </div>
+    <script define:vars={{ API }}>
+      fetch(API + "/api/status")
+        .then((r) => { if (r.ok) location.replace(API); else throw new Error(); })
+        .catch(() => {
+          const h = document.getElementById("hint");
+          h.className = "warn";
+          h.textContent = "⚠️ Backend offline em " + API + " — arranca-o com o comando abaixo e recarrega esta página.";
+        });
+    </script>
+  </body>
+</html>

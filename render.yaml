@@ -1,0 +1,36 @@
+# Render Blueprint — https://render.com  (New + → Blueprint → aponta ao repo)
+# Os valores "sync: false" NÃO se versionam: preenche-os no painel do Render.
+services:
+  - type: web
+    name: leads-vendedores
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/status
+    envVars:
+      - key: APP_USER
+        value: admin
+      - key: APP_PASSWORD          # define uma password (protege o site)
+        sync: false
+      - key: CONTEXT_DEV_API_KEY   # motor context.dev (CustoJusto/OLX no servidor)
+        sync: false
+      - key: SCRAPE_COUNTRY
+        value: pt
+      - key: APIFY_TOKEN           # Facebook Marketplace + Idealista
+        sync: false
+      - key: APIFY_IDEALISTA_ACTOR
+        value: lukass~idealista-scraper
+      - key: APIFY_IDEALISTA_MAX
+        value: "20"
+      - key: APIFY_FB_LOCATION     # Funchal, Madeira
+        value: "110189845667755"
+      - key: APIFY_FB_MAX
+        value: "30"
+      - key: APIFY_FB_DETAILS
+        value: "1"
+      - key: OPENROUTER_API_KEY    # opcional (extração com IA)
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: openai/gpt-4o-mini
+      - key: SEARCH_API_KEY        # opcional (descoberta via Google)
+        sync: false

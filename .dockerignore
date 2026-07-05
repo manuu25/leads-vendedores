@@ -1,0 +1,23 @@
+# O frontend Astro NÃO vai para a imagem (o FastAPI serve o painel em "/").
+frontend/
+
+# Segredos e ambiente
+.env
+.venv/
+venv/
+
+# Cache/artefactos Python
+__pycache__/
+*.pyc
+
+# Saídas do scraper (não pertencem à imagem)
+leads_*.csv
+leads_*.xlsx
+*.csv
+*.xlsx
+debug_*.html
+
+# Git e ferramentas
+.git/
+.gitignore
+.claude/

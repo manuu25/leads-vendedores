@@ -1,0 +1,10 @@
+requests
+beautifulsoup4
+lxml
+pandas
+openpyxl
+fastapi
+uvicorn[standard]
+jinja2
+python-dotenv
+playwright

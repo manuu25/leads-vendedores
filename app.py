@@ -256,6 +256,7 @@ async def status():
         "openrouter": bool(os.environ.get("OPENROUTER_API_KEY")),
         "modelo_ia": os.environ.get("OPENROUTER_MODEL", "openai/gpt-4o-mini"),
         "search": bool(os.environ.get("SEARCH_API_KEY")),
+        "apify": bool(os.environ.get("APIFY_TOKEN")),
         "fontes": [
             {"key": s.key, "label": s.label, "risky": s.risky, "verified": s.verified}
             for s in all_sources()

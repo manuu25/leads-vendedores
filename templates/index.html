@@ -3,306 +3,623 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CustoJusto — Leads de Vendedores Particulares</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+  <title>Leads FSBO — Vendedores Particulares · Madeira</title>
   <style>
-    :root { --pico-form-element-spacing-vertical: .5rem; }
-    body { background: #f6f8fb; }
-    main.container { max-width: 1150px; padding-top: 1.5rem; }
-    .hero { background: linear-gradient(135deg,#2563eb,#1e40af); color:#fff; border-radius:16px;
-            padding:1.4rem 1.6rem; margin-bottom:1.4rem; }
-    .hero h1 { margin:0; font-size:1.5rem; color:#fff; }
-    .hero p { margin:.3rem 0 0; opacity:.9; font-size:.95rem; }
-    .grid-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; }
-    .card { background:#fff; border:1px solid #e5e9f0; border-radius:14px; padding:1.2rem 1.3rem; margin-bottom:1.2rem; }
-    .badges { display:flex; gap:.5rem; flex-wrap:wrap; margin:.2rem 0 0; }
-    .badge { font-size:.78rem; padding:.18rem .6rem; border-radius:999px; font-weight:600; }
-    .badge.ok { background:#dcfce7; color:#166534; }
-    .badge.off { background:#fee2e2; color:#991b1b; }
-    .toggles { display:flex; gap:1.5rem; flex-wrap:wrap; align-items:center; }
-    .engines { display:flex; gap:1.2rem; flex-wrap:wrap; }
-    .engines label { font-size:.9rem; }
-    table { font-size:.86rem; }
-    th { white-space:nowrap; }
-    td.tel { font-weight:700; color:#166534; }
-    .muted { color:#64748b; font-size:.85rem; }
-    #log { font-family:ui-monospace,monospace; font-size:.78rem; background:#0f172a; color:#cbd5e1;
-           padding:.8rem 1rem; border-radius:10px; max-height:180px; overflow:auto; white-space:pre-wrap; }
-    .row-actions { display:flex; gap:.6rem; flex-wrap:wrap; align-items:center; }
-    .spinner { display:none; }
-    .spinner[aria-busy="true"] { display:inline-block; }
-    .table-wrap { overflow-x:auto; max-height:60vh; }
-    .pill { font-size:.74rem; padding:.1rem .5rem; border-radius:6px; background:#eef2ff; color:#3730a3; }
+    :root{
+      --bg:#e9eaec; --panel:#ffffff; --line:#eef0f2; --line-2:#f4f5f7;
+      --ink:#16181d; --ink-2:#5b616e; --ink-3:#9aa0ab;
+      --accent:#111317; --accent-soft:#f4f5f7; --ring:#e6e8ec;
+      --green-bg:#e7f7ee; --green-tx:#137a45;
+      --purple-bg:#eee9fe; --purple-tx:#6b3fd4;
+      --blue-bg:#e5effe; --blue-tx:#1d68e0;
+      --amber-bg:#fdf1d9; --amber-tx:#b5730c;
+      --pink-bg:#fde8ee; --pink-tx:#c1366a;
+      --gray-bg:#eef0f2; --gray-tx:#565c67;
+      --radius:16px;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; padding:0; }
+    body{
+      background:var(--bg); color:var(--ink);
+      font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+      -webkit-font-smoothing:antialiased; font-size:14px; line-height:1.45;
+      display:flex; justify-content:center; padding:22px;
+    }
+    a{ color:inherit; text-decoration:none; }
+    button{ font-family:inherit; cursor:pointer; }
+
+    .app{
+      width:100%; max-width:1480px; background:var(--panel); border-radius:20px;
+      box-shadow:0 12px 44px rgba(20,24,35,.10), 0 2px 8px rgba(20,24,35,.04);
+      display:flex; overflow:hidden; min-height:calc(100vh - 44px);
+    }
+
+    /* ---------- Sidebar ---------- */
+    .sidebar{ width:246px; flex:none; border-right:1px solid var(--line); padding:20px 14px; display:flex; flex-direction:column; gap:6px; }
+    .brand{ display:flex; align-items:center; gap:10px; padding:6px 10px 16px; }
+    .brand .logo{ width:30px; height:30px; border-radius:9px; background:var(--accent); display:grid; place-items:center; color:#fff; }
+    .brand b{ font-size:16px; letter-spacing:-.2px; }
+    .nav-label{ font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--ink-3); padding:14px 12px 6px; }
+    .nav{ display:flex; flex-direction:column; gap:2px; }
+    .nav a{ display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:10px; color:var(--ink-2); font-weight:500; font-size:13.5px; }
+    .nav a svg{ width:18px; height:18px; flex:none; }
+    .nav a:hover{ background:var(--accent-soft); color:var(--ink); }
+    .nav a.active{ background:var(--accent-soft); color:var(--ink); font-weight:600; }
+    .nav a .tag{ margin-left:auto; font-size:11px; background:#fff; border:1px solid var(--line); color:var(--ink-2); border-radius:7px; padding:1px 7px; }
+    .nav a.active .tag{ background:var(--accent); color:#fff; border-color:var(--accent); }
+    .side-foot{ margin-top:auto; display:flex; flex-direction:column; gap:2px; padding-top:12px; border-top:1px solid var(--line); }
+    .dot{ width:7px; height:7px; border-radius:50%; display:inline-block; }
+    .dot.on{ background:#22c55e; } .dot.off{ background:#d4d7dd; }
+    .side-status{ font-size:11.5px; color:var(--ink-3); padding:8px 12px 2px; display:flex; flex-direction:column; gap:5px; }
+    .side-status span{ display:flex; align-items:center; gap:7px; }
+
+    /* ---------- Main ---------- */
+    .main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+    .topbar{ height:64px; flex:none; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:16px; padding:0 22px; }
+    .search{ flex:1; max-width:420px; position:relative; }
+    .search svg{ position:absolute; left:13px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--ink-3); }
+    .search input{ width:100%; height:38px; border:1px solid var(--line); background:#fbfbfc; border-radius:10px; padding:0 12px 0 36px; font-size:13.5px; color:var(--ink); outline:none; }
+    .search input:focus{ border-color:var(--ring); background:#fff; box-shadow:0 0 0 3px rgba(17,19,23,.05); }
+    .top-actions{ margin-left:auto; display:flex; align-items:center; gap:8px; }
+    .icon-btn{ width:38px; height:38px; border-radius:10px; border:1px solid var(--line); background:#fff; display:grid; place-items:center; color:var(--ink-2); position:relative; }
+    .icon-btn:hover{ background:var(--accent-soft); color:var(--ink); }
+    .icon-btn svg{ width:18px; height:18px; }
+    .icon-btn .live-dot{ position:absolute; top:8px; right:9px; width:7px; height:7px; border-radius:50%; background:#22c55e; display:none; }
+    .icon-btn.live .live-dot{ display:block; }
+    .avatar-me{ width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#111317,#3b3f49); color:#fff; display:grid; place-items:center; font-weight:700; font-size:13px; }
+
+    .content{ padding:22px 26px 30px; flex:1; overflow:auto; }
+    .crumb{ font-size:12.5px; color:var(--ink-3); margin-bottom:4px; }
+    .head{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+    .head h1{ font-size:24px; letter-spacing:-.5px; margin:0; }
+    .count-pill{ font-size:12px; font-weight:600; color:var(--ink-2); background:var(--accent-soft); border:1px solid var(--line); border-radius:999px; padding:3px 11px; }
+    .head-actions{ margin-left:auto; display:flex; gap:9px; align-items:center; }
+    .btn{ height:38px; padding:0 15px; border-radius:10px; border:1px solid var(--line); background:#fff; color:var(--ink); font-weight:600; font-size:13px; display:inline-flex; align-items:center; gap:8px; }
+    .btn:hover{ background:var(--accent-soft); }
+    .btn svg{ width:16px; height:16px; }
+    .btn.dark{ background:var(--accent); color:#fff; border-color:var(--accent); }
+    .btn.dark:hover{ background:#000; }
+    .btn.green{ background:#137a45; border-color:#137a45; color:#fff; }
+    .btn.green:hover{ filter:brightness(1.06); }
+
+    .tabs{ display:flex; gap:2px; border-bottom:1px solid var(--line); margin-top:18px; }
+    .tab{ padding:11px 4px; margin-right:22px; font-size:13.5px; font-weight:600; color:var(--ink-3); border-bottom:2px solid transparent; margin-bottom:-1px; background:none; border-top:none; border-left:none; border-right:none; }
+    .tab.active{ color:var(--ink); border-bottom-color:var(--accent); }
+    .tab:hover{ color:var(--ink); }
+
+    .toolbar{ display:flex; align-items:center; gap:10px; padding:14px 0 12px; flex-wrap:wrap; }
+    .toolbar .search{ max-width:300px; }
+    .chips{ display:flex; gap:6px; flex-wrap:wrap; }
+    .chip{ font-size:12.5px; font-weight:600; color:var(--ink-2); background:#fff; border:1px solid var(--line); border-radius:9px; padding:6px 11px; display:inline-flex; align-items:center; gap:6px; }
+    .chip:hover{ background:var(--accent-soft); }
+    .chip.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+    .chip .n{ font-size:11px; opacity:.7; }
+    .tool-right{ margin-left:auto; display:flex; gap:8px; }
+
+    /* ---------- Table ---------- */
+    .table-wrap{ border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+    .scroll-x{ overflow-x:auto; }
+    table{ width:100%; border-collapse:collapse; font-size:13px; min-width:920px; }
+    thead th{ text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-3); background:#fbfbfc; border-bottom:1px solid var(--line); padding:11px 14px; white-space:nowrap; }
+    tbody td{ padding:12px 14px; border-bottom:1px solid var(--line-2); vertical-align:middle; }
+    tbody tr:last-child td{ border-bottom:none; }
+    tbody tr:hover{ background:#fbfbfc; }
+    .cb{ width:20px; }
+    input[type=checkbox]{ width:16px; height:16px; accent-color:var(--accent); cursor:pointer; }
+
+    .imovel{ display:flex; align-items:center; gap:11px; min-width:230px; }
+    .thumb{ width:44px; height:44px; border-radius:10px; object-fit:cover; flex:none; background:var(--accent-soft); }
+    .thumb-ph{ width:44px; height:44px; border-radius:10px; flex:none; background:var(--accent-soft); display:grid; place-items:center; font-size:18px; }
+    .imovel .t{ font-weight:600; color:var(--ink); line-height:1.25; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; max-width:280px; }
+    .imovel .sub{ font-size:12px; color:var(--ink-3); margin-top:1px; }
+
+    .contact .tel{ font-weight:700; color:var(--green-tx); }
+    .contact .tel.none{ color:var(--ink-3); font-weight:500; }
+    .contact .sub{ font-size:12px; color:var(--ink-3); }
+    .price{ font-weight:700; letter-spacing:-.2px; white-space:nowrap; }
+    .muted{ color:var(--ink-3); }
+
+    .qbar{ width:104px; height:6px; border-radius:999px; background:var(--line); overflow:hidden; }
+    .qbar > i{ display:block; height:100%; border-radius:999px; background:var(--accent); }
+    .qwrap{ display:flex; align-items:center; gap:9px; }
+    .qwrap b{ font-size:12px; font-weight:600; color:var(--ink-2); width:34px; }
+
+    .stage{ font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:999px; display:inline-block; white-space:nowrap; }
+    .src-custojusto{ background:var(--green-bg); color:var(--green-tx); }
+    .src-olx{ background:var(--purple-bg); color:var(--purple-tx); }
+    .src-facebook{ background:var(--blue-bg); color:var(--blue-tx); }
+    .src-imovirtual{ background:var(--amber-bg); color:var(--amber-tx); }
+    .src-idealista{ background:var(--pink-bg); color:var(--pink-tx); }
+    .src-google{ background:var(--gray-bg); color:var(--gray-tx); }
+    .link-open{ color:var(--ink-2); font-weight:600; display:inline-flex; align-items:center; gap:5px; font-size:12.5px; }
+    .link-open:hover{ color:var(--accent); }
+    .link-open svg{ width:14px; height:14px; }
+
+    .empty{ text-align:center; padding:64px 20px; color:var(--ink-3); }
+    .empty .big{ font-size:38px; margin-bottom:10px; }
+    .empty b{ color:var(--ink); font-size:15px; }
+
+    .pager{ display:flex; align-items:center; justify-content:center; gap:6px; padding:16px 0 2px; }
+    .pager button{ min-width:34px; height:34px; border-radius:9px; border:1px solid var(--line); background:#fff; color:var(--ink-2); font-size:13px; font-weight:600; padding:0 10px; }
+    .pager button:hover:not(:disabled){ background:var(--accent-soft); }
+    .pager button.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+    .pager button:disabled{ opacity:.4; cursor:default; }
+    .pager .gap{ border:none; background:none; }
+
+    /* ---------- Modal ---------- */
+    .overlay{ position:fixed; inset:0; background:rgba(16,18,23,.42); backdrop-filter:blur(2px); display:none; align-items:flex-start; justify-content:center; padding:34px 16px; z-index:50; overflow:auto; }
+    .overlay.open{ display:flex; }
+    .modal{ width:100%; max-width:680px; background:#fff; border-radius:18px; box-shadow:0 24px 70px rgba(0,0,0,.28); overflow:hidden; }
+    .modal-head{ display:flex; align-items:center; gap:12px; padding:20px 22px; border-bottom:1px solid var(--line); }
+    .modal-head h2{ margin:0; font-size:17px; }
+    .modal-head p{ margin:2px 0 0; font-size:12.5px; color:var(--ink-3); }
+    .modal-head .close{ margin-left:auto; width:34px; height:34px; border-radius:9px; border:1px solid var(--line); background:#fff; color:var(--ink-2); font-size:18px; line-height:1; }
+    .modal-body{ padding:20px 22px; max-height:64vh; overflow:auto; }
+    .modal-foot{ padding:16px 22px; border-top:1px solid var(--line); display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .field{ margin-bottom:16px; }
+    .field > label{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-2); margin-bottom:6px; }
+    .field input[type=text], .field input[type=number]{ width:100%; height:38px; border:1px solid var(--line); border-radius:10px; padding:0 12px; font-size:13.5px; background:#fbfbfc; outline:none; }
+    .field input:focus{ border-color:var(--ring); background:#fff; box-shadow:0 0 0 3px rgba(17,19,23,.05); }
+    .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .opts{ display:flex; flex-direction:column; gap:9px; }
+    .opt{ display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:11px; font-size:13px; }
+    .opt:hover{ background:#fbfbfc; }
+    .opt input{ margin-top:2px; }
+    .opt .meta{ display:block; font-size:11.5px; color:var(--ink-3); margin-top:1px; }
+    .opt.rec{ border-color:#cfe8d8; background:#f4fbf7; }
+    .sect{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--ink-3); margin:20px 0 9px; }
+    .inline-toggles{ display:flex; flex-wrap:wrap; gap:10px; }
+    .kpill{ font-size:11.5px; font-weight:600; border-radius:999px; padding:3px 10px; }
+    .kpill.on{ background:var(--green-bg); color:var(--green-tx); }
+    .kpill.offk{ background:#fdecec; color:#b42318; }
+    #log{ font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:11.5px; background:#0f1116; color:#c7ccd6; padding:12px 14px; border-radius:11px; max-height:180px; overflow:auto; white-space:pre-wrap; margin-top:6px; }
+    .spin{ font-size:12.5px; color:var(--ink-3); display:none; }
+    .spin.on{ display:inline-flex; align-items:center; gap:7px; }
+    .spin .sp{ width:13px; height:13px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:rot .7s linear infinite; }
+    @keyframes rot{ to{ transform:rotate(360deg); } }
+    .note{ font-size:11.5px; color:var(--ink-3); }
+    .foot-note{ font-size:11.5px; color:var(--ink-3); padding:16px 2px 0; max-width:900px; }
+
+    @media(max-width:880px){
+      body{ padding:0; } .app{ border-radius:0; min-height:100vh; }
+      .sidebar{ display:none; }
+      .grid3{ grid-template-columns:1fr; } .grid2{ grid-template-columns:1fr; }
+    }
   </style>
 </head>
 <body>
-<main class="container">
+<div class="app">
 
-  <div class="hero">
-    <h1>🏡 Leads de Vendedores Particulares — Madeira</h1>
-    <p>Proprietários a vender <strong>sem agência</strong> (FSBO), multicanal: CustoJusto · OLX · Facebook Marketplace. Vê contacto, fotos e link, e exporta.</p>
-  </div>
-
-  <!-- Estado das integrações -->
-  <div class="card">
-    <strong>Integrações</strong>
-    <div class="badges" id="badges">
-      <span class="badge off" id="b-context">context.dev: a verificar…</span>
-      <span class="badge off" id="b-or">OpenRouter (IA): a verificar…</span>
-    </div>
-    <p class="muted" id="keys-hint" style="margin-bottom:0"></p>
-  </div>
-
-  <!-- Formulário -->
-  <form id="form" class="card">
-    <div class="grid-form">
-      <label>Região
-        <input name="regiao" value="madeira" placeholder="madeira, funchal, lisboa…" />
-      </label>
-      <label>Categoria
-        <input name="categoria" value="moradias" placeholder="moradias, apartamentos…" />
-      </label>
-      <label>Máx. páginas
-        <input name="max_paginas" type="number" min="1" max="20" value="3" />
-      </label>
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="logo">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H11l-1 8.5 9-12h-6.5z"/></svg>
+      </span>
+      <b>Leads FSBO</b>
     </div>
 
-    <fieldset style="margin-top:1rem">
-      <legend><strong>Fontes de leads</strong> <span class="muted">(de onde recolher — corridas por esta ordem)</span></legend>
-      <div class="engines">
-        <label><input type="checkbox" name="fonte" value="custojusto" checked /> CustoJusto <span class="muted">(testado · c/ telefone)</span></label>
-        <label><input type="checkbox" name="fonte" value="olx" checked /> OLX.pt <span class="muted">(FSBO · sem telefone*)</span></label>
-        <label><input type="checkbox" name="fonte" value="facebook" checked /> Facebook Marketplace <span class="muted">(FSBO Madeira · via Apify · $)</span></label>
-        <label><input type="checkbox" name="fonte" value="imovirtual" /> Imovirtual <span class="muted">(agências · pouco FSBO)</span></label>
-        <label><input type="checkbox" name="fonte" value="idealista" /> Idealista <span class="muted">(agências · via Apify · $)</span></label>
-        <label><input type="checkbox" name="fonte" value="google" /> Google <span class="muted">(descoberta, precisa SEARCH_API_KEY)</span></label>
+    <div class="nav-label">Prospeção</div>
+    <nav class="nav">
+      <a class="active" href="#" data-nav="leads">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+        Leads <span class="tag" id="nav-count">0</span>
+      </a>
+      <a href="#" id="nav-recolher">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        Recolher leads
+      </a>
+      <a href="#" id="nav-continuo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+        Scraping contínuo
+      </a>
+    </nav>
+
+    <div class="nav-label">Dados</div>
+    <nav class="nav">
+      <a href="/api/export?fmt=csv">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        Exportar CSV
+      </a>
+      <a href="/api/export?fmt=xlsx">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Exportar Excel
+      </a>
+    </nav>
+
+    <div class="side-foot">
+      <div class="side-status">
+        <span><i class="dot off" id="dot-context"></i> context.dev</span>
+        <span><i class="dot off" id="dot-apify"></i> Apify (Facebook)</span>
+        <span><i class="dot off" id="dot-ia"></i> IA (OpenRouter)</span>
       </div>
-      <small class="muted">* No OLX/Imovirtual, o telefone fica atrás de login/clique — obténs preço, área, tipologia e fotos, mas raramente o contacto. O CustoJusto costuma trazer o telefone.</small>
-    </fieldset>
-
-    <fieldset style="margin-top:1rem">
-      <legend><strong>Motores de scraping</strong> <span class="muted">(usados por esta ordem, com fallback)</span></legend>
-      <div class="engines">
-        <label><input type="checkbox" name="engine" value="requests" /> 1. requests <span class="muted">(rápido, grátis)</span></label>
-        <label><input type="checkbox" name="engine" value="playwright" checked /> 2. Playwright <span class="muted">(navegador local)</span></label>
-        <label><input type="checkbox" name="engine" value="context" checked /> 3. context.dev <span class="muted">(API paga)</span></label>
-      </div>
-    </fieldset>
-
-    <div class="toggles" style="margin-top:1rem">
-      <label><input type="checkbox" name="so_particulares" checked role="switch" /> Só particulares (FSBO)</label>
-      <label><input type="checkbox" name="com_contacto" checked role="switch" /> Visitar anúncios (extrair contacto)</label>
-      <label><input type="checkbox" name="usar_ia" checked role="switch" /> Extrair campos com IA</label>
+      <nav class="nav" style="margin-top:8px">
+        <a href="#" id="nav-def">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Definições
+        </a>
+      </nav>
     </div>
+  </aside>
 
-    <fieldset style="margin-top:1rem">
-      <legend><strong>Scraping contínuo</strong> <span class="muted">(fica a correr e vai acumulando leads novos)</span></legend>
-      <div class="toggles">
-        <label>Intervalo (min)
-          <input name="intervalo_min" type="number" min="5" max="240" value="30" style="width:90px" />
-        </label>
-        <button type="button" id="btn-auto" class="secondary">🔄 Iniciar contínuo</button>
-        <span class="muted" id="auto-status">parado</span>
+  <!-- ===================== MAIN ===================== -->
+  <div class="main">
+    <div class="topbar">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" class="q" placeholder="Procurar imóvel, zona, telefone…" />
       </div>
-      <small class="muted">⚠️ Facebook/Idealista gastam créditos Apify em cada ciclo — usa um intervalo alto (30–60 min) para poupar os $5.</small>
-    </fieldset>
-
-    <div class="row-actions" style="margin-top:1.2rem">
-      <button type="submit" id="btn-go">🔎 Procurar agora (1 vez)</button>
-      <span class="spinner" aria-busy="false" id="spin">A processar… (pode demorar)</span>
-    </div>
-  </form>
-
-  <!-- Resultados -->
-  <div class="card" id="results-card" style="display:none">
-    <div class="row-actions" style="justify-content:space-between; margin-bottom:.8rem">
-      <strong id="count">0 leads</strong>
-      <div class="row-actions">
-        <a href="/api/export?fmt=csv" role="button" class="secondary outline">⬇ CSV</a>
-        <a href="/api/export?fmt=xlsx" role="button" class="secondary outline">⬇ Excel</a>
+      <div class="top-actions">
+        <button class="icon-btn" id="top-recolher" title="Recolher leads agora">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button class="icon-btn" id="top-continuo" title="Scraping contínuo">
+          <span class="live-dot"></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+        </button>
+        <div class="avatar-me">N</div>
       </div>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Fonte</th><th>Foto</th><th>Título</th><th>Tip.</th><th>m²</th><th>Preço</th><th>Localidade</th>
-            <th>Anunciante</th><th>Telefone</th><th>Tipo</th><th>Anúncio</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
+
+    <div class="content">
+      <div class="crumb">Contactos</div>
+      <div class="head">
+        <h1>Os Meus Leads</h1>
+        <span class="count-pill" id="count-pill">0 leads</span>
+        <div class="head-actions">
+          <button class="btn" id="btn-refresh">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+            Atualizar
+          </button>
+          <button class="btn dark" id="btn-open-recolher">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Recolher leads
+          </button>
+        </div>
+      </div>
+
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="all">Todos</button>
+        <button class="tab" data-tab="tel">Com telefone</button>
+        <button class="tab" data-tab="foto">Com fotos</button>
+      </div>
+
+      <div class="toolbar">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" class="q" placeholder="Filtrar…" />
+        </div>
+        <div class="chips" id="src-chips">
+          <button class="chip active" data-src="all">Todas as fontes</button>
+        </div>
+        <div class="tool-right">
+          <span class="note" id="live-note"></span>
+        </div>
+      </div>
+
+      <div id="table-host"></div>
+      <div class="pager" id="pager"></div>
+
+      <div class="foot-note">
+        ⚖️ <b>RGPD</b> · Recolhes dados pessoais (nome, telefone) de pessoas singulares. Cada lead guarda a <b>fonte</b> e a <b>data de recolha</b>. Define a base legal, informa o titular no 1.º contacto e respeita os Termos de cada site (uso proporcional, sem scraping massivo). Fontes FSBO reais: CustoJusto (com telefone) · OLX · Facebook Marketplace.
+      </div>
     </div>
   </div>
+</div>
 
-  <!-- Log -->
-  <div class="card" id="log-card" style="display:none">
-    <strong>Registo da execução</strong>
-    <div id="log" style="margin-top:.6rem"></div>
+<!-- ===================== MODAL: RECOLHER ===================== -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h2>Recolher leads</h2>
+        <p>Vendedores particulares (FSBO) — Madeira · multicanal</p>
+      </div>
+      <button class="close" id="modal-close">&times;</button>
+    </div>
+
+    <form id="form" class="modal-body">
+      <div class="grid3">
+        <div class="field"><label>Região</label><input type="text" name="regiao" value="madeira" placeholder="madeira, funchal…" /></div>
+        <div class="field"><label>Categoria</label><input type="text" name="categoria" value="moradias" placeholder="moradias, apartamentos" /></div>
+        <div class="field"><label>Máx. páginas</label><input type="number" name="max_paginas" min="1" max="20" value="3" /></div>
+      </div>
+
+      <div class="sect">Fontes de leads</div>
+      <div class="opts">
+        <label class="opt rec"><input type="checkbox" name="fonte" value="custojusto" checked /><span><b>CustoJusto</b> — FSBO com telefone <span class="meta">A fonte principal: costuma trazer o contacto direto.</span></span></label>
+        <label class="opt rec"><input type="checkbox" name="fonte" value="facebook" checked /><span><b>Facebook Marketplace</b> — FSBO Madeira (via Apify · $) <span class="meta">A mais rica em particulares na Madeira. Fotos + link; telefone só quando está no texto.</span></span></label>
+        <label class="opt"><input type="checkbox" name="fonte" value="olx" checked /><span><b>OLX.pt</b> — FSBO sem telefone <span class="meta">Preço, área, tipologia e fotos; contacto atrás de login.</span></span></label>
+        <label class="opt"><input type="checkbox" name="fonte" value="imovirtual" /><span><b>Imovirtual</b> — sobretudo agências <span class="meta">Pouco FSBO (~0 particulares).</span></span></label>
+        <label class="opt"><input type="checkbox" name="fonte" value="idealista" /><span><b>Idealista</b> — agências (via Apify · $) <span class="meta">Dominado por agências; gasta créditos. Não recomendado p/ FSBO.</span></span></label>
+        <label class="opt"><input type="checkbox" name="fonte" value="google" /><span><b>Google</b> — descoberta <span class="meta">Precisa de SEARCH_API_KEY.</span></span></label>
+      </div>
+
+      <div class="sect">Motores de scraping <span class="note">(por ordem, com fallback)</span></div>
+      <div class="inline-toggles">
+        <label class="chip"><input type="checkbox" name="engine" value="requests" /> requests</label>
+        <label class="chip"><input type="checkbox" name="engine" value="playwright" checked /> Playwright</label>
+        <label class="chip"><input type="checkbox" name="engine" value="context" checked /> context.dev</label>
+      </div>
+
+      <div class="sect">Opções</div>
+      <div class="inline-toggles">
+        <label class="chip"><input type="checkbox" name="so_particulares" checked /> Só particulares</label>
+        <label class="chip"><input type="checkbox" name="com_contacto" checked /> Visitar anúncios (contacto)</label>
+        <label class="chip"><input type="checkbox" name="usar_ia" checked /> Extrair com IA</label>
+      </div>
+
+      <div class="sect">Scraping contínuo</div>
+      <div class="grid2" style="align-items:end">
+        <div class="field" style="margin:0"><label>Intervalo (minutos)</label><input type="number" name="intervalo_min" min="5" max="240" value="30" /></div>
+        <div class="note" style="align-self:center">⚠️ Facebook/Idealista gastam créditos Apify por ciclo — usa 30–60 min.</div>
+      </div>
+
+      <div id="log-wrap" style="display:none"><div class="sect">Registo</div><div id="log"></div></div>
+    </form>
+
+    <div class="modal-foot">
+      <span class="kpill on" id="k-context">context.dev</span>
+      <span class="kpill on" id="k-ia">IA</span>
+      <span class="spin" id="spin"><span class="sp"></span> A processar… pode demorar</span>
+      <div style="margin-left:auto; display:flex; gap:10px">
+        <button class="btn" type="button" id="btn-auto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+          Iniciar contínuo
+        </button>
+        <button class="btn dark" type="submit" form="form" id="btn-go">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          Procurar agora
+        </button>
+      </div>
+    </div>
   </div>
-
-  <p class="muted">
-    ⚖️ <strong>RGPD:</strong> recolhes dados pessoais (nome, telefone) de pessoas singulares.
-    Cada lead inclui a fonte e a data de recolha. Define a base legal do tratamento e informa o
-    titular no 1.º contacto. Respeita os Termos do CustoJusto — uso proporcional, sem scraping massivo.
-  </p>
-
-</main>
+</div>
 
 <script>
 const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
 
-async function loadStatus() {
-  try {
-    const r = await fetch('/api/status');
-    const s = await r.json();
-    setBadge('#b-context', 'context.dev', s.context_dev);
-    setBadge('#b-or', 'OpenRouter (IA: ' + s.modelo_ia + ')', s.openrouter);
-    const faltam = [];
-    if (!s.context_dev) faltam.push('CONTEXT_DEV_API_KEY');
-    if (!s.openrouter) faltam.push('OPENROUTER_API_KEY');
-    $('#keys-hint').textContent = faltam.length
-      ? '⚠️ Em falta no .env: ' + faltam.join(', ') + '. (O Playwright funciona sem chaves.)'
-      : '✓ Todas as chaves configuradas.';
-  } catch (e) { /* ignora */ }
-}
-function setBadge(sel, label, ok) {
-  const el = $(sel);
-  el.textContent = label + (ok ? ': ✓ ligado' : ': ✗ sem chave');
-  el.className = 'badge ' + (ok ? 'ok' : 'off');
+/* ---------- estado ---------- */
+let allRows = [];
+let page = 1;
+const PAGE_SIZE = 8;
+let tab = 'all';
+let srcFilter = 'all';
+let term = '';
+
+/* ---------- helpers ---------- */
+function esc(v){ if(v===null||v===undefined) return ''; return String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function eur(v){ return v ? Number(v).toLocaleString('pt-PT')+' €' : ''; }
+const SRC_LABEL = { custojusto:'CustoJusto', olx:'OLX', facebook:'Facebook', imovirtual:'Imovirtual', idealista:'Idealista', google:'Google' };
+
+function quality(r){
+  let s=0;
+  if(r.telefone) s+=42;
+  if(r.fotos) s+=20;
+  if(r.preco) s+=18;
+  if(r.localidade) s+=12;
+  if(r.tipologia||r.area_m2) s+=8;
+  return Math.min(100,s);
 }
 
-function esc(v) {
-  if (v === null || v === undefined) return '';
-  return String(v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function passesTab(r){
+  if(tab==='tel') return !!r.telefone;
+  if(tab==='foto') return !!r.fotos;
+  return true;
 }
-function eur(v) { return v ? Number(v).toLocaleString('pt-PT') + ' €' : ''; }
+function passesSrc(r){ return srcFilter==='all' || r.fonte===srcFilter; }
+function passesTerm(r){
+  if(!term) return true;
+  const hay = [r.titulo,r.localidade,r.telefone,r.anunciante,r.tipologia,r.fonte].map(x=>String(x||'').toLowerCase()).join(' ');
+  return hay.includes(term);
+}
+function currentRows(){ return allRows.filter(r=>passesTab(r)&&passesSrc(r)&&passesTerm(r)); }
 
-function render(rows) {
-  const tb = $('#tbody');
-  tb.innerHTML = '';
-  for (const r of rows) {
-    const tr = document.createElement('tr');
-    const foto = (r.fotos || '').split(' | ')[0];
-    tr.innerHTML = `
-      <td><span class="pill">${esc(r.fonte)}</span></td>
-      <td>${foto ? '<a href="'+esc(foto)+'" target="_blank" rel="noopener"><img src="'+esc(foto)+'" alt="" style="width:56px;height:42px;object-fit:cover;border-radius:6px" loading="lazy"></a>' : ''}</td>
-      <td>${esc(r.titulo)}</td>
-      <td>${r.tipologia ? '<span class="pill">'+esc(r.tipologia)+'</span>' : ''}</td>
-      <td>${esc(r.area_m2)}</td>
-      <td>${eur(r.preco)}</td>
-      <td>${esc(r.localidade)}</td>
-      <td>${esc(r.anunciante)}</td>
-      <td class="tel">${esc(r.telefone)}</td>
-      <td>${esc(r.tipo_anunciante)}</td>
-      <td><a href="${esc(r.url)}" target="_blank" rel="noopener">abrir ↗</a></td>`;
-    tb.appendChild(tr);
+/* ---------- render ---------- */
+function render(){
+  const rows = currentRows();
+  const pages = Math.max(1, Math.ceil(rows.length/PAGE_SIZE));
+  if(page>pages) page=pages;
+  const slice = rows.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
+
+  $('#count-pill').textContent = rows.length + (rows.length===1?' lead':' leads');
+  $('#nav-count').textContent = allRows.length;
+  updateChips();
+
+  const host = $('#table-host');
+  if(allRows.length===0){
+    host.innerHTML = `<div class="table-wrap"><div class="empty"><div class="big">🏡</div><b>Ainda não há leads</b><div style="margin-top:6px">Clica em <b>Recolher leads</b> para procurar vendedores particulares na Madeira,<br>ou inicia o <b>scraping contínuo</b> para acumular automaticamente.</div></div></div>`;
+    $('#pager').innerHTML=''; return;
   }
-  $('#count').textContent = rows.length + ' leads';
-  $('#results-card').style.display = rows.length ? 'block' : 'none';
-}
-
-function showLog(lines) {
-  $('#log-card').style.display = 'block';
-  $('#log').textContent = (lines || []).join('\n');
-}
-
-$('#form').addEventListener('submit', async (ev) => {
-  ev.preventDefault();
-  const f = ev.target;
-  const engines = [...f.querySelectorAll('input[name=engine]:checked')].map(e => e.value);
-  if (engines.length === 0) { alert('Escolhe pelo menos um motor de scraping.'); return; }
-  const fontes = [...f.querySelectorAll('input[name=fonte]:checked')].map(e => e.value);
-  if (fontes.length === 0) { alert('Escolhe pelo menos uma fonte de leads.'); return; }
-
-  const payload = {
-    regiao: f.regiao.value.trim() || 'portugal',
-    categoria: f.categoria.value.trim() || 'moradias',
-    max_paginas: parseInt(f.max_paginas.value || '3', 10),
-    so_particulares: f.so_particulares.checked,
-    com_contacto: f.com_contacto.checked,
-    usar_ia: f.usar_ia.checked,
-    engines,
-    fontes,
-    venda: true,
-  };
-
-  $('#btn-go').setAttribute('aria-busy', 'true');
-  $('#btn-go').disabled = true;
-  $('#spin').setAttribute('aria-busy', 'true');
-  try {
-    const r = await fetch('/api/scrape', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload),
-    });
-    const data = await r.json();
-    if (data.erro) { showLog(['ERRO: ' + data.erro, ...(data.log||[])]); alert('Erro: ' + data.erro); }
-    else { render(data.rows || []); showLog(data.log); }
-  } catch (e) {
-    alert('Falha na ligação ao servidor: ' + e.message);
-  } finally {
-    $('#btn-go').removeAttribute('aria-busy');
-    $('#btn-go').disabled = false;
-    $('#spin').setAttribute('aria-busy', 'false');
+  if(rows.length===0){
+    host.innerHTML = `<div class="table-wrap"><div class="empty"><div class="big">🔎</div><b>Nenhum lead com estes filtros</b><div style="margin-top:6px">Ajusta a pesquisa, a aba ou a fonte.</div></div></div>`;
+    $('#pager').innerHTML=''; return;
   }
-});
 
-// ---- Scraping contínuo ----
-function payloadFromForm() {
-  const f = $('#form');
-  const engines = [...f.querySelectorAll('input[name=engine]:checked')].map(e => e.value);
-  const fontes = [...f.querySelectorAll('input[name=fonte]:checked')].map(e => e.value);
+  let body='';
+  for(const r of slice){
+    const foto=(r.fotos||'').split(' | ')[0];
+    const thumb = foto
+      ? `<img class="thumb" src="${esc(foto)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=\\'thumb-ph\\'>🏠</div>'">`
+      : `<div class="thumb-ph">🏠</div>`;
+    const sub=[r.tipologia, r.area_m2?esc(r.area_m2)+' m²':''].filter(Boolean).join(' · ');
+    const tel = r.telefone
+      ? `<div class="tel">${esc(r.telefone)}</div>`
+      : `<div class="tel none">— sem telefone</div>`;
+    const q=quality(r);
+    const stageCls = SRC_LABEL[r.fonte]?('src-'+r.fonte):'src-google';
+    body+=`<tr>
+      <td class="cb"><input type="checkbox" class="row-cb"></td>
+      <td><div class="imovel">${thumb}<div><div class="t">${esc(r.titulo)||'(sem título)'}</div><div class="sub">${sub||'—'}</div></div></div></td>
+      <td class="contact">${tel}<div class="sub">${esc(r.anunciante)|| (r.tipo_anunciante?esc(r.tipo_anunciante):'via link')}</div></td>
+      <td>${esc(r.localidade)||'<span class="muted">—</span>'}</td>
+      <td class="price">${eur(r.preco)||'<span class="muted">—</span>'}</td>
+      <td><div class="qwrap"><div class="qbar"><i style="width:${q}%"></i></div><b>${q}%</b></div></td>
+      <td><span class="stage ${stageCls}">${esc(SRC_LABEL[r.fonte]||r.fonte)}</span></td>
+      <td>${r.url?`<a class="link-open" href="${esc(r.url)}" target="_blank" rel="noopener">Abrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg></a>`:''}</td>
+    </tr>`;
+  }
+  host.innerHTML = `<div class="table-wrap"><div class="scroll-x"><table>
+    <thead><tr>
+      <th class="cb"><input type="checkbox" id="cb-all"></th>
+      <th>Imóvel</th><th>Contacto</th><th>Localidade</th><th>Preço</th><th>Qualidade</th><th>Fonte</th><th></th>
+    </tr></thead><tbody>${body}</tbody></table></div></div>`;
+  $('#cb-all')?.addEventListener('change', e=>$$('.row-cb').forEach(c=>c.checked=e.target.checked));
+  renderPager(pages);
+}
+
+function renderPager(pages){
+  const p=$('#pager');
+  if(pages<=1){ p.innerHTML=''; return; }
+  let h=`<button ${page===1?'disabled':''} data-go="prev">‹ Anterior</button>`;
+  const nums=new Set([1,pages,page,page-1,page+1]);
+  let prev=0;
+  for(let i=1;i<=pages;i++){
+    if(!nums.has(i)) continue;
+    if(prev && i-prev>1) h+=`<button class="gap" disabled>…</button>`;
+    h+=`<button class="${i===page?'active':''}" data-go="${i}">${i}</button>`;
+    prev=i;
+  }
+  h+=`<button ${page===pages?'disabled':''} data-go="next">Seguinte ›</button>`;
+  p.innerHTML=h;
+  p.querySelectorAll('button[data-go]').forEach(b=>b.addEventListener('click',()=>{
+    const g=b.dataset.go;
+    if(g==='prev') page=Math.max(1,page-1);
+    else if(g==='next') page=Math.min(pages,page+1);
+    else page=parseInt(g,10);
+    render(); $('#content')?.scrollTo?.(0,0);
+  }));
+}
+
+function updateChips(){
+  const counts={};
+  for(const r of allRows) counts[r.fonte]=(counts[r.fonte]||0)+1;
+  const keys=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+  let h=`<button class="chip ${srcFilter==='all'?'active':''}" data-src="all">Todas as fontes <span class="n">${allRows.length}</span></button>`;
+  for(const k of keys) h+=`<button class="chip ${srcFilter===k?'active':''}" data-src="${k}">${esc(SRC_LABEL[k]||k)} <span class="n">${counts[k]}</span></button>`;
+  const c=$('#src-chips'); c.innerHTML=h;
+  c.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{ srcFilter=b.dataset.src; page=1; render(); }));
+}
+
+function setRows(rows){ allRows = Array.isArray(rows)?rows:[]; render(); }
+
+/* ---------- tabs / search ---------- */
+$$('#tabs .tab').forEach(t=>t.addEventListener('click',()=>{
+  $$('#tabs .tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+  tab=t.dataset.tab; page=1; render();
+}));
+$$('.q').forEach(inp=>inp.addEventListener('input',e=>{
+  term=e.target.value.trim().toLowerCase();
+  $$('.q').forEach(o=>{ if(o!==e.target) o.value=e.target.value; });
+  page=1; render();
+}));
+
+/* ---------- status ---------- */
+async function loadStatus(){
+  try{
+    const s=await (await fetch('/api/status')).json();
+    const setDot=(id,on)=>{ const el=$(id); if(el) el.className='dot '+(on?'on':'off'); };
+    setDot('#dot-context', s.context_dev);
+    setDot('#dot-ia', s.openrouter);
+    setDot('#dot-apify', s.apify);
+    const kc=$('#k-context'); if(kc) kc.className='kpill '+(s.context_dev?'on':'offk');
+    const ki=$('#k-ia'); if(ki){ ki.className='kpill '+(s.openrouter?'on':'offk'); ki.textContent = 'IA'+(s.modelo_ia?(' · '+s.modelo_ia):''); }
+  }catch(e){}
+}
+
+/* ---------- modal ---------- */
+function openModal(){ $('#overlay').classList.add('open'); }
+function closeModal(){ $('#overlay').classList.remove('open'); }
+['#nav-recolher','#top-recolher','#btn-open-recolher','#nav-def'].forEach(sel=>$(sel)?.addEventListener('click',e=>{e.preventDefault();openModal();}));
+$('#modal-close').addEventListener('click',closeModal);
+$('#overlay').addEventListener('click',e=>{ if(e.target===$('#overlay')) closeModal(); });
+$('#nav-continuo')?.addEventListener('click',e=>{e.preventDefault();openModal();});
+$('#top-continuo')?.addEventListener('click',()=>$('#btn-auto').click());
+$('#btn-refresh').addEventListener('click',pollAuto);
+
+function showLog(lines){ $('#log-wrap').style.display='block'; $('#log').textContent=(lines||[]).join('\n'); }
+
+/* ---------- payload ---------- */
+function payloadFromForm(){
+  const f=$('#form');
+  const engines=[...f.querySelectorAll('input[name=engine]:checked')].map(e=>e.value);
+  const fontes=[...f.querySelectorAll('input[name=fonte]:checked')].map(e=>e.value);
   return {
-    regiao: f.regiao.value.trim() || 'madeira',
-    categoria: f.categoria.value.trim() || 'moradias',
-    max_paginas: parseInt(f.max_paginas.value || '3', 10),
-    so_particulares: f.so_particulares.checked,
-    com_contacto: f.com_contacto.checked,
-    usar_ia: f.usar_ia.checked,
-    engines, fontes, venda: true,
-    intervalo_min: parseFloat(f.intervalo_min.value || '30'),
+    regiao:f.regiao.value.trim()||'madeira',
+    categoria:f.categoria.value.trim()||'moradias',
+    max_paginas:parseInt(f.max_paginas.value||'3',10),
+    so_particulares:f.so_particulares.checked,
+    com_contacto:f.com_contacto.checked,
+    usar_ia:f.usar_ia.checked,
+    engines, fontes, venda:true,
+    intervalo_min:parseFloat(f.intervalo_min.value||'30'),
   };
 }
 
-let autoOn = false, autoTimer = null;
-async function pollAuto() {
-  try {
-    const r = await fetch('/api/auto/leads');
-    const d = await r.json();
-    render(d.rows || []);
-    if (d.log) showLog(d.log);
-    const s = d.status || {};
-    $('#auto-status').textContent = s.running
-      ? `▶ a correr · ciclo ${s.cycles} · ${s.total} leads acumulados (desde ${s.started || ''})`
-      : `parado · ${s.total || 0} leads acumulados`;
-  } catch (e) { /* ignora */ }
+/* ---------- procurar 1x ---------- */
+$('#form').addEventListener('submit', async (ev)=>{
+  ev.preventDefault();
+  const p=payloadFromForm();
+  if(p.fontes.length===0){ alert('Escolhe pelo menos uma fonte de leads.'); return; }
+  if(p.engines.length===0){ alert('Escolhe pelo menos um motor de scraping.'); return; }
+  $('#btn-go').disabled=true; $('#spin').classList.add('on');
+  try{
+    const r=await fetch('/api/scrape',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});
+    const data=await r.json();
+    if(data.erro){ showLog(['ERRO: '+data.erro, ...(data.log||[])]); alert('Erro: '+data.erro); }
+    else{ setRows(data.rows||[]); showLog(data.log); if((data.rows||[]).length) closeModal(); }
+  }catch(e){ alert('Falha na ligação ao servidor: '+e.message); }
+  finally{ $('#btn-go').disabled=false; $('#spin').classList.remove('on'); }
+});
+
+/* ---------- contínuo ---------- */
+let autoOn=false, autoTimer=null;
+async function pollAuto(){
+  try{
+    const d=await (await fetch('/api/auto/leads')).json();
+    setRows(d.rows||[]);
+    if(d.log) showLog(d.log);
+    const s=d.status||{};
+    autoOn = !!s.running;
+    syncAutoUI(s);
+  }catch(e){}
 }
-$('#btn-auto').addEventListener('click', async () => {
-  if (!autoOn) {
-    const payload = payloadFromForm();
-    if (payload.fontes.length === 0) { alert('Escolhe pelo menos uma fonte de leads.'); return; }
-    if (payload.engines.length === 0) { alert('Escolhe pelo menos um motor de scraping.'); return; }
-    await fetch('/api/auto/start', {
-      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload),
-    });
-    autoOn = true;
-    $('#btn-auto').textContent = '⏹ Parar contínuo';
-    $('#auto-status').textContent = '▶ a arrancar…';
-    pollAuto();
-    autoTimer = setInterval(pollAuto, 5000);
-  } else {
-    await fetch('/api/auto/stop', {method: 'POST'});
-    autoOn = false;
-    $('#btn-auto').textContent = '🔄 Iniciar contínuo';
-    clearInterval(autoTimer);
+function syncAutoUI(s){
+  s=s||{};
+  const btn=$('#btn-auto'); const top=$('#top-continuo'); const note=$('#live-note');
+  if(autoOn){
+    btn.classList.add('green'); btn.innerHTML='⏹ Parar contínuo';
+    top.classList.add('live');
+    note.textContent = `● a correr · ciclo ${s.cycles||0} · ${s.total||0} acumulados`;
+  }else{
+    btn.classList.remove('green'); btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg> Iniciar contínuo`;
+    top.classList.remove('live');
+    note.textContent = (s.total? `parado · ${s.total} leads acumulados` : '');
+  }
+}
+$('#btn-auto').addEventListener('click', async ()=>{
+  if(!autoOn){
+    const p=payloadFromForm();
+    if(p.fontes.length===0){ alert('Escolhe pelo menos uma fonte.'); return; }
+    if(p.engines.length===0){ alert('Escolhe pelo menos um motor.'); return; }
+    await fetch('/api/auto/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});
+    autoOn=true; syncAutoUI({cycles:0,total:allRows.length}); closeModal();
+    if(autoTimer) clearInterval(autoTimer);
+    autoTimer=setInterval(pollAuto,5000); pollAuto();
+  }else{
+    await fetch('/api/auto/stop',{method:'POST'});
+    autoOn=false; if(autoTimer) clearInterval(autoTimer);
     pollAuto();
   }
 });
 
+/* ---------- arranque ---------- */
 loadStatus();
-// se já houver um ciclo a correr no servidor, mostra-o
 pollAuto();
+// enquanto a página estiver aberta, refresca a cada 8s (apanha o contínuo do servidor)
+setInterval(()=>{ if(!document.hidden) pollAuto(); }, 8000);
 </script>
 </body>
 </html>

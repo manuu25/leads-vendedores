@@ -41,6 +41,46 @@ DEFAULT_ACTOR = "apify~facebook-marketplace-scraper"
 DEFAULT_LOCATION = "110189845667755"  # Funchal, Madeira (propertyforsale)
 
 
+# --- Filtros de qualidade (tirar falsos positivos) ------------------------- #
+# Anúncios claramente estrangeiros (não-Madeira): cirílico, grego, árabe,
+# hebraico, CJK, kana, hangul. As casas da Madeira estão em pt/en (alfabeto
+# latino). Basta um punhado de caracteres não-latinos para excluir.
+_NONLATIN_RE = re.compile(
+    r"[Ѐ-ԯͰ-Ͽ֐-׿؀-ۿݐ-ݿ"
+    r"぀-ヿ一-鿿가-힯]"
+)
+
+# O vendedor DIZ que é particular / sem intermediários → confiamos e mantemos,
+# mesmo que a palavra "imobiliária" apareça (ex.: "vendo SEM imobiliárias").
+_FSBO_RE = re.compile(
+    r"(particular(es)?|propriet[aá]ri[ao]|dono\s+direto|direto\s+do\s+dono|"
+    r"sem\s+(imobili|interm|ag[êe]nci|comiss))",
+    re.IGNORECASE,
+)
+
+# Sinais fortes de agência / consultor imobiliário (baixo falso-positivo).
+_AGENCY_RE = re.compile(
+    r"(imobili[aá]ri[ao]|media[çc][aã]o\s+imobili|consultor[ae]?\s+imobili|"
+    r"licen[çc]a\s*ami|\bami[\s:.#-]*\d{3,}|"
+    r"re/?max|century\s*21|century21|keller\s*williams|predimed|zome|"
+    r"engel\s*&|v[öo]lkers|vanguard\s+properties|\biad\s+(portugal|imob)|"
+    r"grupo\s+imobili|real\s+estate\s+(agenc|group))",
+    re.IGNORECASE,
+)
+
+
+def _is_foreign(text):
+    return bool(text) and len(_NONLATIN_RE.findall(text)) >= 3
+
+
+def _is_agency(text):
+    if not text:
+        return False
+    if _FSBO_RE.search(text):   # diz explicitamente que é particular → não é agência
+        return False
+    return bool(_AGENCY_RE.search(text))
+
+
 def _token():
     return os.environ.get("APIFY_TOKEN", "").strip()
 
@@ -113,6 +153,7 @@ def _map(it):
         "telefone": tel,
         "tipo_anunciante": "particular",  # Marketplace ~ particulares (best-effort)
         "fotos": fotos,
+        "_text": f"{titulo}\n{desc or ''}",  # usado só para filtrar (removido depois)
     }
 
 
@@ -151,13 +192,26 @@ def _collect(params, fetch, log):
         except OSError:
             pass
 
+    so_part = bool(params.get("so_particulares", True))
     recs, seen = [], set()
+    n_foreign = n_agency = 0
     for it in items:
         if not isinstance(it, dict):
             continue
         rec = _map(it)
+        texto = rec.pop("_text", "")
         if not rec.get("url") or rec["id"] in seen:
             continue
+        # falso positivo 1: anúncio estrangeiro (não é da Madeira)
+        if _is_foreign(texto):
+            n_foreign += 1
+            continue
+        # falso positivo 2: agência / consultor imobiliário (não é particular)
+        if _is_agency(texto):
+            rec["tipo_anunciante"] = "profissional"
+            if so_part:
+                n_agency += 1
+                continue
         seen.add(rec["id"])
         rec["fonte"] = "Facebook Marketplace"
         rec["_src_key"] = "facebook"
@@ -166,8 +220,8 @@ def _collect(params, fetch, log):
         recs.append(rec)
 
     com_tel = sum(1 for r in recs if r.get("telefone"))
-    log(f"[facebook] {len(recs)} anúncios (Marketplace ~ particulares), "
-        f"{com_tel} com telefone no texto; os restantes contactam-se pelo link.")
+    log(f"[facebook] {len(recs)} anúncios de particulares, {com_tel} com telefone "
+        f"no texto; filtrados {n_foreign} estrangeiros + {n_agency} agências/consultores.")
     return recs
 
 

@@ -180,6 +180,31 @@
     .note{ font-size:11.5px; color:var(--ink-3); }
     .foot-note{ font-size:11.5px; color:var(--ink-3); padding:16px 2px 0; max-width:900px; }
 
+    /* ---------- Lightbox / galeria ---------- */
+    .imovel-click{ cursor:pointer; }
+    .imovel-click:hover .t{ text-decoration:underline; }
+    .imovel-click:hover .thumb, .imovel-click:hover .thumb-ph{ outline:2px solid var(--accent); outline-offset:1px; }
+    .lb-overlay{ align-items:center; padding:22px; }
+    .lb{ position:relative; width:100%; max-width:1060px; background:#fff; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; max-height:calc(100vh - 44px); box-shadow:0 24px 70px rgba(0,0,0,.4); }
+    .lb-main{ position:relative; background:#0e0f13; display:flex; align-items:center; justify-content:center; min-height:320px; flex:1; }
+    .lb-main img{ max-width:100%; max-height:62vh; object-fit:contain; display:block; }
+    .lb-empty{ color:#8a8f98; font-size:14px; padding:60px; }
+    .lb-nav{ position:absolute; top:50%; transform:translateY(-50%); width:46px; height:46px; border-radius:50%; border:none; background:rgba(255,255,255,.92); color:#111; font-size:26px; line-height:1; display:grid; place-items:center; box-shadow:0 2px 10px rgba(0,0,0,.3); }
+    .lb-nav.prev{ left:14px; } .lb-nav.next{ right:14px; }
+    .lb-nav:hover{ background:#fff; } .lb-nav:disabled{ opacity:.35; cursor:default; }
+    .lb-counter{ position:absolute; bottom:12px; right:14px; background:rgba(0,0,0,.62); color:#fff; font-size:12px; padding:3px 10px; border-radius:999px; }
+    .lb .close{ position:absolute; top:12px; right:12px; z-index:6; background:rgba(255,255,255,.92); }
+    .lb-thumbs{ display:flex; gap:8px; padding:11px 12px; overflow-x:auto; background:#fafafb; border-top:1px solid var(--line); }
+    .lb-thumbs img{ width:66px; height:50px; object-fit:cover; border-radius:8px; cursor:pointer; opacity:.55; border:2px solid transparent; flex:none; }
+    .lb-thumbs img:hover{ opacity:.85; }
+    .lb-thumbs img.active{ opacity:1; border-color:var(--accent); }
+    .lb-info{ padding:15px 20px 18px; }
+    .lb-title{ font-size:17px; font-weight:700; letter-spacing:-.3px; }
+    .lb-meta{ color:var(--ink-2); font-size:13.5px; margin-top:5px; display:flex; gap:8px 16px; flex-wrap:wrap; align-items:center; }
+    .lb-meta b{ color:var(--ink); }
+    .lb-meta .sep{ opacity:.3; }
+    .lb-actions{ display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap; }
+
     @media(max-width:880px){
       body{ padding:0; } .app{ border-radius:0; min-height:100vh; }
       .sidebar{ display:none; }
@@ -376,6 +401,32 @@
   </div>
 </div>
 
+<!-- ===================== LIGHTBOX / GALERIA ===================== -->
+<div class="overlay lb-overlay" id="lightbox">
+  <div class="lb">
+    <button class="close" id="lb-close">&times;</button>
+    <div class="lb-main">
+      <button class="lb-nav prev" id="lb-prev" aria-label="Anterior">&#8249;</button>
+      <img id="lb-img" src="" alt="" />
+      <div class="lb-empty" id="lb-empty" style="display:none">Sem fotos disponíveis para este anúncio.</div>
+      <button class="lb-nav next" id="lb-next" aria-label="Seguinte">&#8250;</button>
+      <div class="lb-counter" id="lb-counter"></div>
+    </div>
+    <div class="lb-thumbs" id="lb-thumbs"></div>
+    <div class="lb-info">
+      <div class="lb-title" id="lb-title"></div>
+      <div class="lb-meta" id="lb-meta"></div>
+      <div class="lb-actions">
+        <span class="stage" id="lb-src"></span>
+        <a class="btn dark" id="lb-open" target="_blank" rel="noopener">
+          Abrir anúncio original
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -449,9 +500,10 @@ function render(){
       : `<div class="tel none">— sem telefone</div>`;
     const q=quality(r);
     const stageCls = SRC_LABEL[r.fonte]?('src-'+r.fonte):'src-google';
+    const fotoN=(r.fotos||'').split(' | ').filter(Boolean).length;
     body+=`<tr>
       <td class="cb"><input type="checkbox" class="row-cb"></td>
-      <td><div class="imovel">${thumb}<div><div class="t">${esc(r.titulo)||'(sem título)'}</div><div class="sub">${sub||'—'}</div></div></div></td>
+      <td class="imovel-click" data-key="${esc(r.fonte)}|${esc(r.id)}" title="Ver fotos em grande"><div class="imovel">${thumb}<div><div class="t">${esc(r.titulo)||'(sem título)'}</div><div class="sub">${sub||'—'}${fotoN?` · 📷 ${fotoN} fotos`:''}</div></div></div></td>
       <td class="contact">${tel}<div class="sub">${esc(r.anunciante)|| (r.tipo_anunciante?esc(r.tipo_anunciante):'via link')}</div></td>
       <td>${esc(r.localidade)||'<span class="muted">—</span>'}</td>
       <td class="price">${eur(r.preco)||'<span class="muted">—</span>'}</td>
@@ -503,6 +555,65 @@ function updateChips(){
 }
 
 function setRows(rows){ allRows = Array.isArray(rows)?rows:[]; render(); }
+
+/* ---------- lightbox / galeria ---------- */
+let lbPhotos=[], lbIdx=0;
+function openLightbox(key){
+  const r = allRows.find(x => (String(x.fonte)+'|'+String(x.id))===key);
+  if(!r) return;
+  lbPhotos = (r.fotos||'').split(' | ').filter(Boolean);
+  lbIdx = 0;
+  $('#lb-title').textContent = r.titulo || '(sem título)';
+  const bits=[];
+  if(r.preco) bits.push(`<b>${eur(r.preco)}</b>`);
+  if(r.localidade) bits.push(`📍 ${esc(r.localidade)}`);
+  const tp=[r.tipologia, r.area_m2?esc(r.area_m2)+' m²':''].filter(Boolean).join(' · ');
+  if(tp) bits.push(tp);
+  if(r.telefone) bits.push(`📞 <b>${esc(r.telefone)}</b>`);
+  bits.push(`👤 ${esc(r.tipo_anunciante||'particular')}`);
+  bits.push(`🖼️ ${lbPhotos.length} foto${lbPhotos.length===1?'':'s'}`);
+  $('#lb-meta').innerHTML = bits.join('<span class="sep">•</span>');
+  const s=$('#lb-src'); s.className='stage '+(SRC_LABEL[r.fonte]?('src-'+r.fonte):'src-google'); s.textContent=SRC_LABEL[r.fonte]||r.fonte;
+  const o=$('#lb-open'); if(r.url){ o.href=r.url; o.style.display=''; } else { o.style.display='none'; }
+  renderThumbs();
+  showPhoto(0);
+  $('#lightbox').classList.add('open');
+}
+function showPhoto(i){
+  const has = lbPhotos.length>0;
+  $('#lb-img').style.display = has?'block':'none';
+  $('#lb-empty').style.display = has?'none':'block';
+  $('#lb-prev').style.display = lbPhotos.length>1?'grid':'none';
+  $('#lb-next').style.display = lbPhotos.length>1?'grid':'none';
+  if(!has){ $('#lb-counter').textContent=''; return; }
+  lbIdx = (i+lbPhotos.length)%lbPhotos.length;
+  $('#lb-img').src = lbPhotos[lbIdx];
+  $('#lb-counter').textContent = `${lbIdx+1} / ${lbPhotos.length}`;
+  $$('#lb-thumbs img').forEach((t,k)=>t.classList.toggle('active',k===lbIdx));
+  const act=$('#lb-thumbs img.active'); if(act) act.scrollIntoView({block:'nearest',inline:'nearest'});
+}
+function renderThumbs(){
+  const c=$('#lb-thumbs');
+  if(lbPhotos.length<2){ c.style.display='none'; c.innerHTML=''; return; }
+  c.style.display='flex';
+  c.innerHTML = lbPhotos.map((u,k)=>`<img src="${esc(u)}" alt="" loading="lazy" data-i="${k}">`).join('');
+  c.querySelectorAll('img').forEach(t=>t.addEventListener('click',()=>showPhoto(parseInt(t.dataset.i,10))));
+}
+function closeLightbox(){ $('#lightbox').classList.remove('open'); $('#lb-img').src=''; }
+$('#lb-close').addEventListener('click',closeLightbox);
+$('#lb-prev').addEventListener('click',()=>showPhoto(lbIdx-1));
+$('#lb-next').addEventListener('click',()=>showPhoto(lbIdx+1));
+$('#lightbox').addEventListener('click',e=>{ if(e.target===$('#lightbox')) closeLightbox(); });
+document.addEventListener('keydown',e=>{
+  if(!$('#lightbox').classList.contains('open')) return;
+  if(e.key==='Escape') closeLightbox();
+  else if(e.key==='ArrowLeft') showPhoto(lbIdx-1);
+  else if(e.key==='ArrowRight') showPhoto(lbIdx+1);
+});
+// delegação: clicar no imóvel abre a galeria
+$('#table-host').addEventListener('click',e=>{
+  const cell=e.target.closest('.imovel-click'); if(cell) openLightbox(cell.dataset.key);
+});
 
 /* ---------- tabs / search ---------- */
 $$('#tabs .tab').forEach(t=>t.addEventListener('click',()=>{

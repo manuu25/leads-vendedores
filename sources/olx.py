@@ -47,13 +47,25 @@ CATEGORIAS = {
 # Anúncio OLX: .../d/anuncio/<slug>-ID<code>.html
 AD_HREF_RE = re.compile(r"/d/anuncio/[\w\-]+-ID([0-9A-Za-z]+)\.html", re.IGNORECASE)
 
+# O OLX filtra a região por SEGMENTO DE CAMINHO (/imoveis/<cat>/<cidade>/), não
+# por q=. Um q=madeira traz mainland ("São João da Madeira", ruas com "madeira"=
+# material, etc.). A ilha da Madeira não tem slug próprio no OLX; a cidade
+# principal é "funchal" (verificado live 2026-07: devolve São Martinho, Sé…).
+OLX_REGIOES = {
+    "madeira": "funchal",
+    "ilha-da-madeira": "funchal",
+    "funchal": "funchal",
+}
+
 
 def build_listing_url(regiao, categoria, venda, so_particulares, pagina):
     cat = CATEGORIAS.get(categoria, categoria)
+    reg = (regiao or "").strip().lower()
+    reg = OLX_REGIOES.get(reg, reg)
     url = f"{BASE}/imoveis/{cat}/"
+    if reg and reg != "portugal":
+        url += f"{reg}/"          # região como caminho (filtro real do OLX)
     params = []
-    if regiao and regiao.lower() != "portugal":
-        params.append(f"q={regiao}")
     if so_particulares:
         # filtro "particulares" do OLX
         params.append("search%5Bprivate_business%5D=private")

@@ -443,6 +443,18 @@ let term = '';
 function esc(v){ if(v===null||v===undefined) return ''; return String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function eur(v){ return v ? Number(v).toLocaleString('pt-PT')+' €' : ''; }
 const SRC_LABEL = { custojusto:'CustoJusto', olx:'OLX', facebook:'Facebook', imovirtual:'Imovirtual', idealista:'Idealista', google:'Google' };
+// o campo `fonte` guarda a etiqueta ("CustoJusto.pt", "Facebook Marketplace"…);
+// derivamos a chave para cor do badge / agrupamento dos chips.
+function srcKey(fonte){
+  const f = String(fonte||'').toLowerCase();
+  if(f.includes('custojusto')) return 'custojusto';
+  if(f.includes('olx')) return 'olx';
+  if(f.includes('facebook')) return 'facebook';
+  if(f.includes('imovirtual')) return 'imovirtual';
+  if(f.includes('idealista')) return 'idealista';
+  if(f.includes('google')) return 'google';
+  return 'google';
+}
 
 function quality(r){
   let s=0;
@@ -459,7 +471,7 @@ function passesTab(r){
   if(tab==='foto') return !!r.fotos;
   return true;
 }
-function passesSrc(r){ return srcFilter==='all' || r.fonte===srcFilter; }
+function passesSrc(r){ return srcFilter==='all' || srcKey(r.fonte)===srcFilter; }
 function passesTerm(r){
   if(!term) return true;
   const hay = [r.titulo,r.localidade,r.telefone,r.anunciante,r.tipologia,r.fonte].map(x=>String(x||'').toLowerCase()).join(' ');
@@ -499,7 +511,8 @@ function render(){
       ? `<div class="tel">${esc(r.telefone)}</div>`
       : `<div class="tel none">— sem telefone</div>`;
     const q=quality(r);
-    const stageCls = SRC_LABEL[r.fonte]?('src-'+r.fonte):'src-google';
+    const sk=srcKey(r.fonte);
+    const stageCls = 'src-'+sk;
     const fotoN=(r.fotos||'').split(' | ').filter(Boolean).length;
     body+=`<tr>
       <td class="cb"><input type="checkbox" class="row-cb"></td>
@@ -508,7 +521,7 @@ function render(){
       <td>${esc(r.localidade)||'<span class="muted">—</span>'}</td>
       <td class="price">${eur(r.preco)||'<span class="muted">—</span>'}</td>
       <td><div class="qwrap"><div class="qbar"><i style="width:${q}%"></i></div><b>${q}%</b></div></td>
-      <td><span class="stage ${stageCls}">${esc(SRC_LABEL[r.fonte]||r.fonte)}</span></td>
+      <td><span class="stage ${stageCls}">${esc(SRC_LABEL[sk]||r.fonte)}</span></td>
       <td>${r.url?`<a class="link-open" href="${esc(r.url)}" target="_blank" rel="noopener">Abrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg></a>`:''}</td>
     </tr>`;
   }
@@ -546,7 +559,7 @@ function renderPager(pages){
 
 function updateChips(){
   const counts={};
-  for(const r of allRows) counts[r.fonte]=(counts[r.fonte]||0)+1;
+  for(const r of allRows){ const k=srcKey(r.fonte); counts[k]=(counts[k]||0)+1; }
   const keys=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
   let h=`<button class="chip ${srcFilter==='all'?'active':''}" data-src="all">Todas as fontes <span class="n">${allRows.length}</span></button>`;
   for(const k of keys) h+=`<button class="chip ${srcFilter===k?'active':''}" data-src="${k}">${esc(SRC_LABEL[k]||k)} <span class="n">${counts[k]}</span></button>`;
@@ -573,7 +586,7 @@ function openLightbox(key){
   bits.push(`👤 ${esc(r.tipo_anunciante||'particular')}`);
   bits.push(`🖼️ ${lbPhotos.length} foto${lbPhotos.length===1?'':'s'}`);
   $('#lb-meta').innerHTML = bits.join('<span class="sep">•</span>');
-  const s=$('#lb-src'); s.className='stage '+(SRC_LABEL[r.fonte]?('src-'+r.fonte):'src-google'); s.textContent=SRC_LABEL[r.fonte]||r.fonte;
+  const s=$('#lb-src'); const sk=srcKey(r.fonte); s.className='stage src-'+sk; s.textContent=SRC_LABEL[sk]||r.fonte;
   const o=$('#lb-open'); if(r.url){ o.href=r.url; o.style.display=''; } else { o.style.display='none'; }
   renderThumbs();
   showPhoto(0);

@@ -28,15 +28,22 @@ _LOCK = threading.Lock()
 _URL = os.environ.get("DATABASE_URL", "").strip()
 _IS_PG = _URL.startswith("postgres")
 
+# Tabela com nome próprio: a BD pode ser partilhada com outro projeto (o plano
+# free do Render só permite 1 BD), por isso NUNCA usamos um nome genérico.
+_TABLE = "fsbo_leads_kv"
+
 if _IS_PG:
     import psycopg2  # noqa: E402  (só quando há Postgres)
 
     # Render/Heroku usam por vezes o prefixo antigo "postgres://"
     if _URL.startswith("postgres://"):
         _URL = "postgresql://" + _URL[len("postgres://"):]
+    # ligação externa (cross-region) exige SSL
+    if "sslmode=" not in _URL:
+        _URL += ("&" if "?" in _URL else "?") + "sslmode=require"
 
     def _connect():
-        return psycopg2.connect(_URL, connect_timeout=10)
+        return psycopg2.connect(_URL, connect_timeout=15)
 
     _PH = "%s"
 else:
@@ -61,7 +68,7 @@ def init_db():
             c = _connect()
             try:
                 cur = c.cursor()
-                cur.execute("CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT)")
+                cur.execute(f"CREATE TABLE IF NOT EXISTS {_TABLE} (k TEXT PRIMARY KEY, v TEXT)")
                 c.commit()
             finally:
                 c.close()
@@ -78,7 +85,7 @@ def _set(k, v):
             try:
                 cur = c.cursor()
                 cur.execute(
-                    f"INSERT INTO kv (k, v) VALUES ({_PH}, {_PH}) "
+                    f"INSERT INTO {_TABLE} (k, v) VALUES ({_PH}, {_PH}) "
                     f"ON CONFLICT (k) DO UPDATE SET v = excluded.v",
                     (k, v),
                 )
@@ -95,7 +102,7 @@ def _get(k):
             c = _connect()
             try:
                 cur = c.cursor()
-                cur.execute(f"SELECT v FROM kv WHERE k = {_PH}", (k,))
+                cur.execute(f"SELECT v FROM {_TABLE} WHERE k = {_PH}", (k,))
                 row = cur.fetchone()
                 return row[0] if row else None
             finally:

@@ -68,8 +68,11 @@ _AGENCY_RE = re.compile(
     # marcas / redes
     r"re\s*/?\s*max|century\s*21|\bc21\b|keller\s*williams|\bkw\b\s*(portugal|imob|madeira)|"
     r"predimed|\bzome\b|engel\s*&|v[öo]lkers|vanguard\s+properties|"
-    r"\biad\s+(portugal|imob)|\bera\s+(imobili|madeira|funchal|calheta|portugal)|grupo\s+era|\bera\.pt|"
+    r"\biad\b|\bera\s+(imobili|madeira|funchal|calheta|portugal)|grupo\s+era|\bera\.pt|"
     r"sotheby|fine\s*&\s*country|\bjll\b|remax|sonasa|casaiberia|poliana|novaco|"
+    r"prediclub|predi\s*club|comprarcasa|lux[ií]mos|ideal\s*homes|decis[õo]es\s+e\s+solu|"
+    r"maxfinance|habiftec|casa\s*yes|casaiberia|infinity\s*imob|smart\s*imob|"
+    r"custo\s+de\s+chamada|rede\s+m[óo]vel\s+nacional|"   # disclaimer de nº de negócio
     r"grupo\s+imobili|real\s*estate|luxury\s+real|properties\b|"
     # pegadas típicas de anúncio profissional (baixo falso-positivo em pt-PT)
     r"www\.[a-z0-9-]+\.(pt|com)|https?://|"

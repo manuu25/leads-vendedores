@@ -95,6 +95,25 @@ def _is_agency(text):
     return bool(_AGENCY_RE.search(text))
 
 
+# Nome do VENDEDOR com marca de agência (ex.: "ERA Funchal", "RE/MAX ...").
+# Um nome de pessoa ("Joao Miguel Sousa") NÃO é apanhado por aqui — esse deteta-se
+# pelo nº de anúncios ativos (agentes têm muitos; um particular vende 1 casa).
+_AGENCY_NAME_RE = re.compile(
+    r"(imobili[aá]ri|re\s*/?\s*max|century\s*21|keller\s*williams|\bera\b|\bkw\b|"
+    r"zome|predimed|sotheby|engel|v[öo]lkers|vanguard|properties|real\s*estate|"
+    r"consultor|media[çc][ãa]o|realty|\bhomes?\b|luxury)",
+    re.IGNORECASE,
+)
+
+# limiares para classificar o vendedor como profissional/agente
+_SELLER_ACTIVE_THRESHOLD = 3   # nº de anúncios ativos do vendedor (se o actor o der)
+_SELLER_BATCH_THRESHOLD = 2    # nº de anúncios do mesmo vendedor na nossa amostra
+
+
+def _is_agency_seller(name):
+    return bool(name) and bool(_AGENCY_NAME_RE.search(name))
+
+
 def _token():
     return os.environ.get("APIFY_TOKEN", "").strip()
 
@@ -150,13 +169,26 @@ def _map(it):
     if not titulo and desc:
         titulo = desc.strip().splitlines()[0][:80]
 
-    url = it.get("itemUrl")
+    url = it.get("itemUrl") or it.get("listingUrl") or it.get("url")
     if not url and it.get("id"):
         url = f"https://www.facebook.com/marketplace/item/{it['id']}/"
-    fid = it.get("id")
+    fid = it.get("id") or it.get("listingId")
     if not fid and url:
         mm = re.search(r"/item/(\d+)", url)
         fid = mm.group(1) if mm else url
+
+    # ---- Vendedor (só alguns actores o trazem, ex.: curious_coder) ----
+    sel = it.get("marketplace_listing_seller") or it.get("seller") or {}
+    if isinstance(sel, dict):
+        seller_name = sel.get("name") or sel.get("sellerName") or ""
+        prof = sel.get("marketplace_user_profile") or {}
+        seller_id = str(sel.get("id") or sel.get("user_id")
+                        or (prof.get("id") if isinstance(prof, dict) else "") or "")
+        seller_active = (sel.get("active_listings_count")
+                         or (prof.get("active_listings_count") if isinstance(prof, dict) else None))
+    else:
+        seller_name, seller_id, seller_active = (str(sel) if sel else ""), "", None
+    seller_active = seller_active or it.get("sellerActiveListings") or it.get("active_listings_count")
 
     return {
         "id": str(fid),
@@ -168,6 +200,9 @@ def _map(it):
         "tipo_anunciante": "particular",  # Marketplace ~ particulares (best-effort)
         "fotos": fotos,
         "_text": f"{titulo}\n{desc or ''}",  # usado só para filtrar (removido depois)
+        "_seller_name": seller_name,
+        "_seller_id": seller_id,
+        "_seller_active": seller_active if isinstance(seller_active, int) else None,
     }
 
 
@@ -233,10 +268,40 @@ def _collect(params, fetch, log):
         rec.setdefault("categoria", params.get("categoria", "moradias"))
         recs.append(rec)
 
+    # ---- Filtro por VENDEDOR (quando o actor traz o vendedor, ex.: curious_coder) ----
+    recs, n_seller = _apply_seller_filter(recs, so_part)
+
     com_tel = sum(1 for r in recs if r.get("telefone"))
+    extra = f" + {n_seller} agentes (perfil/vendedor)" if n_seller else ""
     log(f"[facebook] {len(recs)} anúncios de particulares, {com_tel} com telefone "
-        f"no texto; filtrados {n_foreign} estrangeiros + {n_agency} agências/consultores.")
+        f"no texto; filtrados {n_foreign} estrangeiros + {n_agency} agências (texto){extra}.")
     return recs
+
+
+def _apply_seller_filter(recs, so_part):
+    """Descarta agentes por VENDEDOR: (a) nome/marca de agência, (b) o actor
+    reporta muitos anúncios ativos, ou (c) o mesmo vendedor aparece com vários
+    anúncios na amostra (um particular vende 1 casa; um agente publica muitos).
+    Com o actor por defeito (sem vendedor) não remove nada — no-op seguro."""
+    from collections import Counter
+    id_counts = Counter(r.get("_seller_id") for r in recs if r.get("_seller_id"))
+    n_seller, out = 0, []
+    for r in recs:
+        sname = r.get("_seller_name") or ""
+        sid = r.get("_seller_id") or ""
+        sact = r.get("_seller_active")
+        agente = (
+            _is_agency_seller(sname)
+            or (isinstance(sact, int) and sact >= _SELLER_ACTIVE_THRESHOLD)
+            or (bool(sid) and id_counts.get(sid, 0) >= _SELLER_BATCH_THRESHOLD)
+        )
+        for k in ("_seller_name", "_seller_id", "_seller_active"):
+            r.pop(k, None)
+        if agente and so_part:
+            n_seller += 1
+            continue
+        out.append(r)
+    return out, n_seller
 
 
 SOURCE = Source(

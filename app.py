@@ -44,6 +44,7 @@ load_dotenv()  # carrega o .env ANTES de ler as chaves
 from scrapers import Scraper, polite_sleep_between  # noqa: E402
 from sources import get_sources, collect_pages, all_sources  # noqa: E402
 import extractor  # noqa: E402
+import store  # noqa: E402  (persistência dos leads)
 
 app = FastAPI(title="CustoJusto — Leads FSBO")
 
@@ -107,6 +108,25 @@ _AUTO = {
     "blocked": set(),   # chaves descartadas manualmente (não voltam nos ciclos)
 }
 
+# --- Persistência: carrega o que já havia (sobrevive a reinícios/redeploys) ---
+try:
+    store.init_db()
+    _AUTO["leads"] = store.load_leads()
+    _AUTO["blocked"] = store.load_blocked()
+    print(f"[store] {store.backend()}: {len(_AUTO['leads'])} leads + "
+          f"{len(_AUTO['blocked'])} bloqueados carregados.")
+except Exception as _e:  # noqa: BLE001
+    print("[store] persistência indisponível:", _e)
+
+
+def _persist():
+    """Grava o estado atual (defensivo — nunca rebenta o scraping)."""
+    try:
+        store.save_leads(_AUTO["leads"])
+        store.save_blocked(_AUTO["blocked"])
+    except Exception as e:  # noqa: BLE001
+        print("[store] persist falhou:", e)
+
 
 def _is_madeira_regiao(regiao):
     r = (regiao or "").strip().lower()
@@ -139,6 +159,7 @@ def _merge_leads(rows):
             if key not in _AUTO["leads"]:
                 novos += 1
             _AUTO["leads"][key] = r
+    _persist()   # grava na BD para sobreviver a reinícios
     return novos
 
 
@@ -356,6 +377,7 @@ async def auto_remove(request: Request):
             _AUTO["blocked"].add(k)
             _AUTO["leads"].pop(k, None)
         total = len(_AUTO["leads"])
+    _persist()   # grava a remoção + blocklist na BD
     return {"removed": len(keys), "total": total}
 
 

@@ -212,13 +212,27 @@ def _collect(params, fetch, log):
     details = os.environ.get("APIFY_FB_DETAILS", "1").strip().lower() in ("1", "true", "yes")
     url = f"https://www.facebook.com/marketplace/{loc}/propertyforsale/"
 
-    log(f"[facebook] Apify Marketplace zona={loc} maxItems={max_itens} detalhes={details}")
+    actor = _actor()
+    cookies = os.environ.get("APIFY_FB_COOKIES", "").strip()
+    # Input depende do actor. O curious_coder usa `urls`/`getListingDetails` e só
+    # devolve o VENDEDOR (p/ filtrar agentes) quando recebe `cookies` de uma sessão
+    # de Facebook (usar uma conta descartável — nunca a do consultor).
+    if "curious_coder" in actor:
+        payload = {"urls": [url], "getListingDetails": details,
+                   "getAllListingPhotos": details, "maxPagesPerUrl": 1}
+        if cookies:
+            payload["cookies"] = cookies
+    else:
+        payload = {"startUrls": [{"url": url}], "resultsLimit": max_itens,
+                   "includeListingDetails": details}
+
+    log(f"[facebook] Apify actor={actor} zona={loc} maxItems={max_itens} "
+        f"detalhes={details} cookies={'sim' if cookies else 'não'}")
     try:
         r = requests.post(
-            f"https://api.apify.com/v2/acts/{_actor()}/run-sync-get-dataset-items",
+            f"https://api.apify.com/v2/acts/{actor}/run-sync-get-dataset-items",
             params={"token": _token(), "maxItems": max_itens, "timeout": 300},
-            json={"startUrls": [{"url": url}], "resultsLimit": max_itens,
-                  "includeListingDetails": details},
+            json=payload,
             timeout=330,
         )
     except requests.RequestException as e:

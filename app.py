@@ -22,6 +22,7 @@ Arrancar:
 """
 
 import asyncio
+import copy
 import io
 import json
 import os
@@ -131,10 +132,16 @@ except Exception as _e:  # noqa: BLE001
 
 
 def _persist():
-    """Grava o estado atual (defensivo — nunca rebenta o scraping)."""
+    """Grava o estado atual (defensivo — nunca rebenta o scraping).
+    Tira uma cópia SOB O LOCK antes de serializar: o worker de scraping corre
+    noutra thread e pode mutar _AUTO["leads"] a meio do json.dumps (race →
+    'dictionary changed size during iteration'). A cópia isola a serialização."""
     try:
-        store.save_leads(_AUTO["leads"])
-        store.save_blocked(_AUTO["blocked"])
+        with _AUTO["lock"]:
+            leads = copy.deepcopy(_AUTO["leads"])
+            blocked = set(_AUTO["blocked"])
+        store.save_leads(leads)
+        store.save_blocked(blocked)
     except Exception as e:  # noqa: BLE001
         print("[store] persist falhou:", e)
 

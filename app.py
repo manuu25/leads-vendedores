@@ -94,7 +94,14 @@ COLUNAS = [
     "id", "fonte", "titulo", "tipologia", "area_m2", "preco", "localidade", "regiao",
     "categoria", "anunciante", "telefone", "tipo_anunciante", "fotos",
     "fonte_url", "data_recolha", "url",
+    # ciclo de vida do anúncio (para deteção de retirados / off-market)
+    "estado", "primeira_vez", "ultima_vez", "retirado_em",
 ]
+
+# Um anúncio conta como RETIRADO (off-market) se deixou de aparecer na fonte
+# durante pelo menos estas horas, apesar de a fonte ter continuado a ser recolhida.
+# Alto o suficiente para absorver a amostragem do Facebook (que roda os anúncios).
+_RETIRADO_HORAS = float(os.environ.get("RETIRADO_HORAS", "36"))
 
 # Guarda o último resultado em memória para os botões de exportação (app local,
 # um só utilizador). Não é uma base de dados — é só o último scrape.
@@ -146,21 +153,58 @@ def _mainland_landline(tel):
     return bool(re.match(r"^2(?!91)\d{7,8}$", d))
 
 
+def _horas_desde(ts, agora):
+    """Horas decorridas desde o timestamp (string) ts até `agora` (datetime)."""
+    if not ts:
+        return None
+    try:
+        t = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+    except (ValueError, TypeError):
+        return None
+    return (agora - t).total_seconds() / 3600.0
+
+
 def _merge_leads(rows):
-    """Junta os leads de um ciclo ao acumulador; devolve quantos são novos.
-    Ignora chaves na blocklist (leads descartados à mão, ex.: agências que
-    passaram o filtro por só terem a marca na foto)."""
-    novos = 0
+    """Junta os leads de um ciclo ao acumulador e faz a gestão do CICLO DE VIDA:
+    - marca primeira_vez / ultima_vez / visto_contagem de cada anúncio;
+    - deteta RETIRADOS (off-market): anúncios que estavam no acumulador, cuja
+      fonte foi recolhida neste ciclo, mas que já não aparecem há >= _RETIRADO_HORAS
+      → o dono publicou e retirou (não vendeu conosco) = lead off-market (ouro).
+    Ignora chaves na blocklist. Devolve (novos, retirados_novos)."""
+    agora = datetime.now()
+    agora_s = agora.strftime("%Y-%m-%d %H:%M:%S")
+    vistos = {f"{r.get('fonte')}|{r.get('id')}" for r in rows}
+    fontes_vistas = {r.get("fonte") for r in rows}
+
+    novos = retirados_novos = 0
     with _AUTO["lock"]:
+        # 1) vistos neste ciclo → ativos, atualiza timestamps
         for r in rows:
             key = f"{r.get('fonte')}|{r.get('id')}"
             if key in _AUTO["blocked"]:
                 continue
-            if key not in _AUTO["leads"]:
+            antigo = _AUTO["leads"].get(key)
+            r["primeira_vez"] = (antigo or {}).get("primeira_vez") or agora_s
+            r["visto_contagem"] = (antigo or {}).get("visto_contagem", 0) + 1
+            r["ultima_vez"] = agora_s
+            r["estado"] = "ativo"
+            r["retirado_em"] = None
+            if antigo is None:
                 novos += 1
             _AUTO["leads"][key] = r
+        # 2) ausentes cuja fonte correu → candidatos a retirado
+        for key, rec in _AUTO["leads"].items():
+            if key in vistos or rec.get("fonte") not in fontes_vistas:
+                continue
+            if rec.get("estado") == "retirado":
+                continue
+            horas = _horas_desde(rec.get("ultima_vez"), agora)
+            if horas is not None and horas >= _RETIRADO_HORAS:
+                rec["estado"] = "retirado"
+                rec["retirado_em"] = agora_s
+                retirados_novos += 1
     _persist()   # grava na BD para sobreviver a reinícios
-    return novos
+    return novos, retirados_novos
 
 
 def _auto_worker(params, intervalo_min):
@@ -168,12 +212,14 @@ def _auto_worker(params, intervalo_min):
     while _AUTO["running"]:
         try:
             res = run_scrape(params)
-            novos = _merge_leads(res.get("rows", []))
+            novos, retirados_novos = _merge_leads(res.get("rows", []))
             with _AUTO["lock"]:
                 _AUTO["cycles"] += 1
                 total = len(_AUTO["leads"])
-                _AUTO["log"] = ([f"Ciclo {_AUTO['cycles']}: +{novos} novos "
-                                 f"(total acumulado {total})"] + (res.get("log") or []))[:40]
+                n_ret = sum(1 for r in _AUTO["leads"].values() if r.get("estado") == "retirado")
+                extra = f", +{retirados_novos} retirados (off-market)" if retirados_novos else ""
+                _AUTO["log"] = ([f"Ciclo {_AUTO['cycles']}: +{novos} novos{extra} "
+                                 f"(total {total}, {n_ret} off-market)"] + (res.get("log") or []))[:40]
         except Exception as e:
             with _AUTO["lock"]:
                 _AUTO["log"] = [f"Ciclo falhou: {e}"] + _AUTO["log"][:39]
@@ -388,7 +434,11 @@ async def export(fmt: str = "csv"):
     if not rows:
         return JSONResponse(status_code=400, content={"erro": "Sem dados para exportar. Faz primeiro uma pesquisa."})
 
-    df = pd.DataFrame(rows)[COLUNAS] if rows else pd.DataFrame(columns=COLUNAS)
+    df = pd.DataFrame(rows)
+    for c in COLUNAS:          # garante todas as colunas (leads antigos podem não ter estado/…)
+        if c not in df.columns:
+            df[c] = None
+    df = df[COLUNAS]
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
     nome = f"leads_{stamp}"
 

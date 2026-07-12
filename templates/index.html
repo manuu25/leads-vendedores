@@ -84,6 +84,9 @@
     .tab{ padding:11px 4px; margin-right:22px; font-size:13.5px; font-weight:600; color:var(--ink-3); border-bottom:2px solid transparent; margin-bottom:-1px; background:none; border-top:none; border-left:none; border-right:none; }
     .tab.active{ color:var(--ink); border-bottom-color:var(--accent); }
     .tab:hover{ color:var(--ink); }
+    .tab-n{ font-size:11px; font-weight:700; background:#fdecec; color:#c0392b; border-radius:999px; padding:1px 7px; margin-left:2px; display:none; }
+    .tab-n.show{ display:inline-block; }
+    .offmark{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; color:#c0392b; background:#fdecec; border-radius:999px; padding:2px 9px; }
 
     .toolbar{ display:flex; align-items:center; gap:10px; padding:14px 0 12px; flex-wrap:wrap; }
     .toolbar .search{ max-width:300px; }
@@ -302,6 +305,7 @@
         <button class="tab active" data-tab="all">Todos</button>
         <button class="tab" data-tab="tel">Com telefone</button>
         <button class="tab" data-tab="foto">Com fotos</button>
+        <button class="tab" data-tab="retirado">🔥 Off-market <span class="tab-n" id="ret-n"></span></button>
       </div>
 
       <div class="toolbar">
@@ -474,11 +478,15 @@ function quality(r){
   return Math.min(100,s);
 }
 
+function isRetirado(r){ return r.estado==='retirado'; }
 function passesTab(r){
+  if(tab==='retirado') return isRetirado(r);
+  if(isRetirado(r)) return false;      // off-market só aparecem na sua aba
   if(tab==='tel') return !!r.telefone;
   if(tab==='foto') return !!r.fotos;
   return true;
 }
+function soData(ts){ return ts ? String(ts).slice(0,10) : ''; }
 function passesSrc(r){ return srcFilter==='all' || srcKey(r.fonte)===srcFilter; }
 function passesTerm(r){
   if(!term) return true;
@@ -495,7 +503,10 @@ function render(){
   const slice = rows.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
 
   $('#count-pill').textContent = rows.length + (rows.length===1?' lead':' leads');
-  $('#nav-count').textContent = allRows.length;
+  $('#nav-count').textContent = allRows.filter(r=>!isRetirado(r)).length;
+  const nRet = allRows.filter(isRetirado).length;
+  const rn = $('#ret-n');
+  if(nRet){ rn.textContent = nRet; rn.classList.add('show'); } else { rn.textContent=''; rn.classList.remove('show'); }
   updateChips();
 
   const host = $('#table-host');
@@ -504,7 +515,10 @@ function render(){
     $('#pager').innerHTML=''; return;
   }
   if(rows.length===0){
-    host.innerHTML = `<div class="table-wrap"><div class="empty"><div class="big">🔎</div><b>Nenhum lead com estes filtros</b><div style="margin-top:6px">Ajusta a pesquisa, a aba ou a fonte.</div></div></div>`;
+    const msg = tab==='retirado'
+      ? `<div class="big">🔥</div><b>Ainda sem leads off-market</b><div style="margin-top:6px">Aparecem aqui os donos que <b>publicaram e depois retiraram</b> o anúncio sem vender (os mais valiosos).<br>O detetor precisa de observar os anúncios durante ~1–2 dias para apanhar os primeiros desaparecimentos.</div>`
+      : `<div class="big">🔎</div><b>Nenhum lead com estes filtros</b><div style="margin-top:6px">Ajusta a pesquisa, a aba ou a fonte.</div>`;
+    host.innerHTML = `<div class="table-wrap"><div class="empty">${msg}</div></div>`;
     $('#pager').innerHTML=''; return;
   }
 
@@ -515,6 +529,9 @@ function render(){
       ? `<img class="thumb" src="${esc(foto)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=\\'thumb-ph\\'>🏠</div>'">`
       : `<div class="thumb-ph">🏠</div>`;
     const sub=[r.tipologia, r.area_m2?esc(r.area_m2)+' m²':''].filter(Boolean).join(' · ');
+    const off = isRetirado(r)
+      ? `<div style="margin-top:5px"><span class="offmark">🔥 retirou o anúncio · esteve no mercado ${soData(r.primeira_vez)} → ${soData(r.retirado_em)}</span></div>`
+      : '';
     const tel = r.telefone
       ? `<div class="tel">${esc(r.telefone)}</div>`
       : `<div class="tel none">— sem telefone</div>`;
@@ -525,7 +542,7 @@ function render(){
     const rowKey=`${esc(r.fonte)}|${esc(r.id)}`;
     body+=`<tr>
       <td class="cb"><input type="checkbox" class="row-cb" data-key="${rowKey}"></td>
-      <td class="imovel-click" data-key="${esc(r.fonte)}|${esc(r.id)}" title="Ver fotos em grande"><div class="imovel">${thumb}<div><div class="t">${esc(r.titulo)||'(sem título)'}</div><div class="sub">${sub||'—'}${fotoN?` · 📷 ${fotoN} fotos`:''}</div></div></div></td>
+      <td class="imovel-click" data-key="${esc(r.fonte)}|${esc(r.id)}" title="Ver fotos em grande"><div class="imovel">${thumb}<div><div class="t">${esc(r.titulo)||'(sem título)'}</div><div class="sub">${sub||'—'}${fotoN?` · 📷 ${fotoN} fotos`:''}</div>${off}</div></div></td>
       <td class="contact">${tel}<div class="sub">${esc(r.anunciante)|| (r.tipo_anunciante?esc(r.tipo_anunciante):'via link')}</div></td>
       <td>${esc(r.localidade)||'<span class="muted">—</span>'}</td>
       <td class="price">${eur(r.preco)||'<span class="muted">—</span>'}</td>

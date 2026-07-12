@@ -28,6 +28,7 @@ import os
 import re
 import threading
 import time
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -66,11 +67,14 @@ app.add_middleware(
 # Em local, sem APP_PASSWORD, fica aberto.
 _APP_USER = os.environ.get("APP_USER", "admin")
 _APP_PASSWORD = os.environ.get("APP_PASSWORD")
+# Rotas públicas (nunca pedem login): health-check e a página de captação de
+# vendedores (que é para partilhar com o público) + o seu endpoint.
+_PUBLICO = {"/api/status", "/vender", "/api/lead-form"}
 
 
 @app.middleware("http")
 async def _basic_auth(request: Request, call_next):
-    if _APP_PASSWORD and request.url.path != "/api/status":
+    if _APP_PASSWORD and request.url.path not in _PUBLICO:
         import base64
         import secrets
         auth = request.headers.get("authorization", "")
@@ -346,6 +350,59 @@ def run_scrape(params):
 @app.get("/", response_class=HTMLResponse)
 async def index():
     return HTMLResponse(INDEX_HTML.read_text(encoding="utf-8"))
+
+
+_VENDER_HTML = Path(__file__).parent / "templates" / "vender.html"
+
+
+@app.get("/vender", response_class=HTMLResponse)
+async def vender_page():
+    """Página pública de captação de vendedores (para partilhar em redes/anúncios)."""
+    return HTMLResponse(_VENDER_HTML.read_text(encoding="utf-8"))
+
+
+@app.post("/api/lead-form")
+async def lead_form(request: Request):
+    """Recebe um pedido de avaliação (dono que QUER vender e ainda não anunciou)
+    e guarda-o como lead pré-mercado na BD."""
+    data = await request.json()
+    nome = (data.get("nome") or "").strip()
+    tel = (data.get("telefone") or "").strip()
+    if not nome or not tel:
+        return JSONResponse(status_code=400, content={"erro": "Nome e telefone são obrigatórios."})
+    zona = (data.get("zona") or "").strip()
+    tipo = (data.get("tipo") or "").strip()
+    agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    titulo = (f"{tipo} em {zona}" if (tipo and zona) else (tipo or zona)) or "Pedido de avaliação"
+    rec = {
+        "id": "form-" + uuid.uuid4().hex[:12],
+        "fonte": "Formulário (quero vender)",
+        "titulo": titulo,
+        "tipologia": tipo or None,
+        "area_m2": None,
+        "preco": None,
+        "localidade": zona or None,
+        "regiao": "madeira",
+        "categoria": "captação",
+        "anunciante": nome,
+        "telefone": tel,
+        "tipo_anunciante": "particular",
+        "fotos": "",
+        "fonte_url": None,
+        "data_recolha": agora,
+        "url": None,
+        "estado": "ativo",
+        "primeira_vez": agora,
+        "ultima_vez": agora,
+        "retirado_em": None,
+        "prazo_venda": (data.get("prazo") or "").strip() or None,
+        "mensagem": (data.get("mensagem") or "").strip() or None,
+    }
+    key = f"{rec['fonte']}|{rec['id']}"
+    with _AUTO["lock"]:
+        _AUTO["leads"][key] = rec
+    _persist()
+    return {"ok": True}
 
 
 @app.get("/api/status")

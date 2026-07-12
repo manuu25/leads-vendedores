@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Avaliação grátis da sua casa · Madeira</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{ --ink:#15181e; --ink2:#5b616e; --line:#e4e6ea; --accent:#137a45; --accent-d:#0e5e35; --bg:#f4f6f5; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; background:var(--bg); color:var(--ink);
+      font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; -webkit-font-smoothing:antialiased; }
+    .wrap{ max-width:560px; margin:0 auto; padding:26px 18px 60px; }
+    .hero{ text-align:center; padding:14px 0 22px; }
+    .flag{ font-size:30px; }
+    h1{ font-family:"Space Grotesk",sans-serif; font-size:27px; line-height:1.15; letter-spacing:-.6px; margin:10px 0 8px; }
+    .hero p{ color:var(--ink2); font-size:15px; margin:0 auto; max-width:440px; }
+    .card{ background:#fff; border:1px solid var(--line); border-radius:18px; padding:22px; box-shadow:0 8px 30px rgba(20,24,35,.06); }
+    .perks{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:16px 0 22px; }
+    .perk{ font-size:12.5px; font-weight:600; color:var(--accent-d); background:#e7f7ee; border-radius:999px; padding:6px 12px; }
+    label{ display:block; font-size:13px; font-weight:600; color:var(--ink2); margin:14px 0 6px; }
+    input, select, textarea{ width:100%; border:1px solid var(--line); border-radius:11px; padding:12px 13px; font-size:15px;
+      font-family:inherit; background:#fbfbfc; color:var(--ink); outline:none; }
+    input:focus, select:focus, textarea:focus{ border-color:#bfe4cd; box-shadow:0 0 0 3px rgba(19,122,69,.10); background:#fff; }
+    textarea{ min-height:78px; resize:vertical; }
+    .row{ display:flex; gap:12px; } .row > *{ flex:1; }
+    .consent{ display:flex; gap:10px; align-items:flex-start; margin-top:16px; font-size:12.5px; color:var(--ink2); }
+    .consent input{ width:18px; height:18px; margin-top:1px; accent-color:var(--accent); flex:none; }
+    button{ width:100%; margin-top:20px; height:52px; border:none; border-radius:13px; background:var(--accent); color:#fff;
+      font-size:16px; font-weight:700; font-family:"Space Grotesk",sans-serif; cursor:pointer; }
+    button:hover{ background:var(--accent-d); } button:disabled{ opacity:.6; cursor:default; }
+    .foot{ text-align:center; color:#9aa0ab; font-size:11.5px; margin-top:18px; }
+    .ok{ display:none; text-align:center; padding:26px 10px; }
+    .ok .big{ font-size:52px; } .ok h2{ font-family:"Space Grotesk",sans-serif; margin:12px 0 6px; }
+    .ok p{ color:var(--ink2); }
+    .err{ color:#c0392b; font-size:13px; margin-top:10px; display:none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="flag">🏡🇵🇹</div>
+      <h1>Quer vender a sua casa na Madeira?</h1>
+      <p>Peça uma <strong>avaliação gratuita e sem compromisso</strong>. Um consultor local entra em contacto consigo com o valor de mercado do seu imóvel.</p>
+    </div>
+
+    <div class="card">
+      <div class="perks">
+        <span class="perk">✓ Grátis</span>
+        <span class="perk">✓ Sem compromisso</span>
+        <span class="perk">✓ Resposta em 24h</span>
+      </div>
+
+      <form id="f">
+        <label>O seu nome *</label>
+        <input name="nome" required placeholder="Nome e apelido" />
+
+        <label>Telemóvel / WhatsApp *</label>
+        <input name="telefone" required inputmode="tel" placeholder="9XX XXX XXX" />
+
+        <div class="row">
+          <div>
+            <label>Concelho / Zona *</label>
+            <select name="zona" required>
+              <option value="">Escolher…</option>
+              <option>Funchal</option><option>Câmara de Lobos</option><option>Santa Cruz</option>
+              <option>Machico</option><option>Ribeira Brava</option><option>Ponta do Sol</option>
+              <option>Calheta</option><option>Santana</option><option>São Vicente</option>
+              <option>Porto Moniz</option><option>Porto Santo</option><option>Outro</option>
+            </select>
+          </div>
+          <div>
+            <label>Tipo de imóvel</label>
+            <select name="tipo">
+              <option value="">Escolher…</option>
+              <option>Apartamento T0/T1</option><option>Apartamento T2</option>
+              <option>Apartamento T3+</option><option>Moradia</option>
+              <option>Terreno</option><option>Outro</option>
+            </select>
+          </div>
+        </div>
+
+        <label>Quando pensa vender?</label>
+        <select name="prazo">
+          <option value="">Escolher…</option>
+          <option>O quanto antes</option>
+          <option>Nos próximos 3–6 meses</option>
+          <option>Ainda a explorar / só quero saber o valor</option>
+        </select>
+
+        <label>Mensagem (opcional)</label>
+        <textarea name="mensagem" placeholder="Ex.: moradia T3 com vista mar, precisa de obras…"></textarea>
+
+        <label class="consent">
+          <input type="checkbox" id="consent" required />
+          <span>Autorizo o contacto por telefone/WhatsApp sobre a venda do meu imóvel e o tratamento dos meus dados para esse fim (RGPD).</span>
+        </label>
+
+        <div class="err" id="err"></div>
+        <button type="submit" id="btn">Pedir avaliação grátis →</button>
+      </form>
+    </div>
+
+    <div class="ok" id="ok">
+      <div class="big">✅</div>
+      <h2>Pedido enviado!</h2>
+      <p>Obrigado. Um consultor vai contactá-lo em breve com a avaliação da sua casa.</p>
+    </div>
+
+    <div class="foot">Os seus dados são usados apenas para o contacto sobre a venda do seu imóvel. Pode pedir a remoção a qualquer momento.</div>
+  </div>
+
+<script>
+const f = document.getElementById('f');
+f.addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const err = document.getElementById('err'); err.style.display='none';
+  const d = Object.fromEntries(new FormData(f).entries());
+  if(!d.nome || !d.telefone){ err.textContent='Preencha o nome e o telefone.'; err.style.display='block'; return; }
+  const btn = document.getElementById('btn'); btn.disabled=true; btn.textContent='A enviar…';
+  try{
+    const r = await fetch('/api/lead-form', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d)});
+    if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j.erro||'Erro ao enviar.'); }
+    f.style.display='none';
+    document.querySelector('.perks').style.display='none';
+    document.getElementById('ok').style.display='block';
+  }catch(e){
+    err.textContent = e.message || 'Não foi possível enviar. Tente novamente.'; err.style.display='block';
+    btn.disabled=false; btn.textContent='Pedir avaliação grátis →';
+  }
+});
+</script>
+</body>
+</html>

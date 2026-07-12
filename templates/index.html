@@ -144,6 +144,7 @@
     .src-imovirtual{ background:var(--amber-bg); color:var(--amber-tx); }
     .src-idealista{ background:var(--pink-bg); color:var(--pink-tx); }
     .src-google{ background:var(--gray-bg); color:var(--gray-tx); }
+    .src-formulario{ background:#fdf0d5; color:#8a5a00; }
     .link-open{ color:var(--ink-2); font-weight:600; display:inline-flex; align-items:center; gap:5px; font-size:12.5px; }
     .link-open:hover{ color:var(--accent); }
     .link-open svg{ width:14px; height:14px; }
@@ -237,6 +238,10 @@
       <a class="active" href="#" data-nav="leads">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
         Leads <span class="tag" id="nav-count">0</span>
+      </a>
+      <a href="/vender" target="_blank" rel="noopener" title="Página pública para captar vendedores — partilha o link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
+        Página de captação
       </a>
     </nav>
 
@@ -454,11 +459,12 @@ const selected = new Set();   // chaves fonte|id dos leads escolhidos
 /* ---------- helpers ---------- */
 function esc(v){ if(v===null||v===undefined) return ''; return String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function eur(v){ return v ? Number(v).toLocaleString('pt-PT')+' €' : ''; }
-const SRC_LABEL = { custojusto:'CustoJusto', olx:'OLX', facebook:'Facebook', imovirtual:'Imovirtual', idealista:'Idealista', google:'Google' };
+const SRC_LABEL = { custojusto:'CustoJusto', olx:'OLX', facebook:'Facebook', imovirtual:'Imovirtual', idealista:'Idealista', google:'Google', formulario:'Formulário' };
 // o campo `fonte` guarda a etiqueta ("CustoJusto.pt", "Facebook Marketplace"…);
 // derivamos a chave para cor do badge / agrupamento dos chips.
 function srcKey(fonte){
   const f = String(fonte||'').toLowerCase();
+  if(f.includes('formul')) return 'formulario';
   if(f.includes('custojusto')) return 'custojusto';
   if(f.includes('olx')) return 'olx';
   if(f.includes('facebook')) return 'facebook';
@@ -479,9 +485,10 @@ function quality(r){
 }
 
 function isRetirado(r){ return r.estado==='retirado'; }
+function isFormulario(r){ return srcKey(r.fonte)==='formulario'; }
 function passesTab(r){
-  if(tab==='retirado') return isRetirado(r);
-  if(isRetirado(r)) return false;      // off-market só aparecem na sua aba
+  if(tab==='retirado') return isRetirado(r) || isFormulario(r);   // pré-mercado: retirados + formulário
+  if(isRetirado(r)) return false;      // retirados só na aba off-market
   if(tab==='tel') return !!r.telefone;
   if(tab==='foto') return !!r.fotos;
   return true;
@@ -504,7 +511,7 @@ function render(){
 
   $('#count-pill').textContent = rows.length + (rows.length===1?' lead':' leads');
   $('#nav-count').textContent = allRows.filter(r=>!isRetirado(r)).length;
-  const nRet = allRows.filter(isRetirado).length;
+  const nRet = allRows.filter(r=>isRetirado(r)||isFormulario(r)).length;
   const rn = $('#ret-n');
   if(nRet){ rn.textContent = nRet; rn.classList.add('show'); } else { rn.textContent=''; rn.classList.remove('show'); }
   updateChips();
@@ -529,9 +536,13 @@ function render(){
       ? `<img class="thumb" src="${esc(foto)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=\\'thumb-ph\\'>🏠</div>'">`
       : `<div class="thumb-ph">🏠</div>`;
     const sub=[r.tipologia, r.area_m2?esc(r.area_m2)+' m²':''].filter(Boolean).join(' · ');
-    const off = isRetirado(r)
-      ? `<div style="margin-top:5px"><span class="offmark">🔥 retirou o anúncio · esteve no mercado ${soData(r.primeira_vez)} → ${soData(r.retirado_em)}</span></div>`
-      : '';
+    let off = '';
+    if(isFormulario(r)){
+      const extra=[r.prazo_venda, r.mensagem].filter(Boolean).join(' · ');
+      off = `<div style="margin-top:5px"><span class="offmark" style="background:#fdf0d5;color:#8a5a00">📥 pediu avaliação · quer vender${extra?' · '+esc(extra):''}</span></div>`;
+    } else if(isRetirado(r)){
+      off = `<div style="margin-top:5px"><span class="offmark">🔥 retirou o anúncio · esteve no mercado ${soData(r.primeira_vez)} → ${soData(r.retirado_em)}</span></div>`;
+    }
     const tel = r.telefone
       ? `<div class="tel">${esc(r.telefone)}</div>`
       : `<div class="tel none">— sem telefone</div>`;
